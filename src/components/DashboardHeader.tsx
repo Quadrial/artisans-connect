@@ -61,15 +61,18 @@ const DashboardHeader: React.FC = () => {
 
             {/* User Menu */}
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="flex items-center space-x-2">
+              <button
+                onClick={() => navigate('/profile')}
+                className="flex items-center space-x-2 hover:bg-gray-50 rounded-lg p-1 transition-colors"
+              >
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center">
                   <FiUser className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
                 </div>
-                <div className="hidden lg:block">
+                <div className="hidden lg:block text-left">
                   <p className="text-sm font-medium text-gray-700">{user?.username}</p>
                   <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
                 </div>
-              </div>
+              </button>
               
               <button
                 onClick={handleLogout}

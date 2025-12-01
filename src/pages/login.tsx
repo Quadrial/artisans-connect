@@ -1,6 +1,7 @@
 // src/pages/login.tsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import { Button } from '../components/Button';
 
@@ -11,6 +12,7 @@ const LoginPage: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -81,18 +83,29 @@ const LoginPage: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700" htmlFor="password">
                 Password
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
                   value={password}
                   onChange={onChange}
                   autoComplete="current-password"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Password"
                   required
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <FiEyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <FiEye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
               </div>
             </div>
 

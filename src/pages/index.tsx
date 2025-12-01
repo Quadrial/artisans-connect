@@ -19,7 +19,7 @@ const LandingPage: React.FC = () => {
                 <h1 className="text-2xl font-bold text-gray-900">CraftConnect</h1>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4 ">
               <Link to="/login">
                 <Button variant="secondary" size="medium">Sign In</Button>
               </Link>

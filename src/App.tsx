@@ -6,6 +6,7 @@ import LandingPage from './pages';
 import LoginPage from './pages/login';
 import RegisterPage from './pages/register';
 import DashboardPage from './pages/dashboard';
+import ProfilePage from './pages/profile';
 
 import './App.css';
 
@@ -20,6 +21,11 @@ function App() {
       {/* Protected Routes - Dashboard */}
       <Route path="/dashboard" element={<ProtectedRoute />}>
         <Route index element={<DashboardPage />} />
+      </Route>
+      
+      {/* Protected Routes - Profile */}
+      <Route path="/profile" element={<ProtectedRoute />}>
+        <Route index element={<ProfilePage />} />
       </Route>
     </Routes>
   );
