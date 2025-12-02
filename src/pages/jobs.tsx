@@ -1,0 +1,100 @@
+import React from 'react';
+import { FiBriefcase, FiClock, FiDollarSign } from 'react-icons/fi';
+import useAuth from '../hooks/useAuth';
+import DashboardHeader from '../components/DashboardHeader';
+import Sidebar from '../components/Sidebar';
+import BottomNav from '../components/BottomNav';
+import { Button } from '../components/Button';
+
+const JobsPage: React.FC = () => {
+  const { user } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
+      <Sidebar />
+      <DashboardHeader />
+
+      <main className="md:ml-64 max-w-6xl mx-auto py-4 px-4 sm:py-6 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            {user?.role === 'artisan' ? 'Available Jobs' : 'My Hires'}
+          </h1>
+          <p className="text-gray-600">
+            {user?.role === 'artisan' 
+              ? 'Browse and apply for jobs that match your skills'
+              : 'Manage your hired artisans and ongoing projects'
+            }
+          </p>
+        </div>
+
+        {/* Coming Soon Message */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <FiBriefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {user?.role === 'artisan' ? 'Jobs Board' : 'Hiring Management'} Coming Soon
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {user?.role === 'artisan'
+              ? 'Soon you\'ll be able to browse job opportunities, submit proposals, and manage your applications all in one place.'
+              : 'Track your hired artisans, manage projects, and handle payments seamlessly.'
+            }
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button variant="primary">
+              Get Notified
+            </Button>
+            <Button variant="secondary">
+              Learn More
+            </Button>
+          </div>
+        </div>
+
+        {/* Feature Preview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+              <FiBriefcase className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">
+              {user?.role === 'artisan' ? 'Job Matching' : 'Easy Hiring'}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {user?.role === 'artisan'
+                ? 'Get matched with jobs that fit your skills and availability'
+                : 'Post jobs and receive proposals from qualified artisans'
+              }
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+              <FiDollarSign className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Secure Payments
+            </h3>
+            <p className="text-sm text-gray-600">
+              Safe and secure payment processing with milestone-based releases
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+              <FiClock className="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Project Tracking
+            </h3>
+            <p className="text-sm text-gray-600">
+              Monitor progress, communicate, and manage timelines effectively
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <BottomNav />
+    </div>
+  );
+};
+
+export default JobsPage;

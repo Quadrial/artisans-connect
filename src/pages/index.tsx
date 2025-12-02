@@ -13,9 +13,11 @@ const LandingPage: React.FC = () => {
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
                 {/* Logo */}
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white font-bold text-xl">C</span>
-                </div>
+                <img 
+                  src="/images/logo3.png" 
+                  alt="CraftConnect Logo" 
+                  className="w-10 h-10 mr-3 object-contain"
+                />
                 <h1 className="text-2xl font-bold text-gray-900">CraftConnect</h1>
               </div>
             </div>
@@ -276,9 +278,11 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold">C</span>
-              </div>
+              <img 
+                src="/images/logo3.png" 
+                alt="CraftConnect Logo" 
+                className="w-8 h-8 mr-3 object-contain"
+              />
               <span className="text-xl font-bold">CraftConnect</span>
             </div>
             <div className="text-gray-400 text-sm">

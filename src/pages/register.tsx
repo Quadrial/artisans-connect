@@ -94,9 +94,11 @@ const RegisterPage: React.FC = () => {
         <div>
           <div className="flex justify-center mb-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-xl">C</span>
-              </div>
+              <img 
+                src="/images/logo3.png" 
+                alt="CraftConnect Logo" 
+                className="w-10 h-10 mr-3 object-contain"
+              />
               <h2 className="text-2xl font-bold text-gray-900">CraftConnect</h2>
             </div>
           </div>

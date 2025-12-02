@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FiSearch, FiBell, FiUser, FiLogOut, FiPlus } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import { Button } from './Button';
@@ -7,6 +7,7 @@ import { Button } from './Button';
 const DashboardHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -14,15 +15,29 @@ const DashboardHeader: React.FC = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white shadow-sm border-b sticky top-0 z-50 md:ml-64">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
-          {/* Logo */}
-          <div className="flex items-center shrink-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
-              <span className="text-white font-bold text-sm sm:text-base">C</span>
-            </div>
+          {/* Logo - Only on mobile */}
+          <div className="flex items-center shrink-0 md:hidden">
+            <img 
+              src="/images/logo3.png" 
+              alt="CraftConnect Logo" 
+              className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 object-contain"
+            />
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 hidden xs:block">CraftConnect</h1>
+          </div>
+
+          {/* Page Title - Desktop only */}
+          <div className="hidden md:block">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {location.pathname === '/dashboard' && 'Home'}
+              {location.pathname === '/discover' && 'Discover Artisans'}
+              {location.pathname === '/jobs' && 'Available Jobs'}
+              {location.pathname === '/my-hires' && 'My Hires'}
+              {location.pathname === '/messages' && 'Messages'}
+              {location.pathname === '/profile' && 'Profile'}
+            </h1>
           </div>
 
           {/* Search Bar - Hidden on mobile, shown on tablet+ */}
@@ -59,14 +74,22 @@ const DashboardHeader: React.FC = () => {
               <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
             </button>
 
-            {/* User Menu */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* User Menu - Mobile only */}
+            <div className="flex items-center space-x-2 sm:space-x-3 md:hidden">
               <button
                 onClick={() => navigate('/profile')}
                 className="flex items-center space-x-2 hover:bg-gray-50 rounded-lg p-1 transition-colors"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                  <FiUser className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                  {user?.profilePicture ? (
+                    <img 
+                      src={user.profilePicture} 
+                      alt={user.username} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : (
+                    <FiUser className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
+                  )}
                 </div>
                 <div className="hidden lg:block text-left">
                   <p className="text-sm font-medium text-gray-700">{user?.username}</p>

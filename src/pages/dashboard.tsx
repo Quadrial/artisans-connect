@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiMapPin, FiStar, FiBookmark, FiSearch, FiFilter, FiGrid, FiList, FiUsers } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import DashboardHeader from '../components/DashboardHeader';
+import Sidebar from '../components/Sidebar';
+import BottomNav from '../components/BottomNav';
 import { Button } from '../components/Button';
 
 // Mock data for posts
@@ -339,10 +341,11 @@ const DashboardPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
+      <Sidebar />
       <DashboardHeader />
 
-      <main className="max-w-4xl mx-auto py-4 px-4 sm:py-6 sm:px-6 lg:px-8">
+      <main className="md:ml-64 max-w-4xl mx-auto py-4 px-4 sm:py-6 sm:px-6 lg:px-8">
         {/* Welcome Section */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
@@ -576,6 +579,8 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
       </main>
+
+      <BottomNav />
     </div>
   );
 };

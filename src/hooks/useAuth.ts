@@ -7,6 +7,7 @@ interface User {
   username: string;
   email: string;
   role: 'customer' | 'artisan';
+  profilePicture?: string;
 }
 
 interface UseAuthReturn {
@@ -16,6 +17,7 @@ interface UseAuthReturn {
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string, role: 'customer' | 'artisan') => Promise<void>;
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const useAuth = (): UseAuthReturn => {
@@ -54,13 +56,19 @@ const useAuth = (): UseAuthReturn => {
     setUser(null);
   };
 
+  const updateUser = (updates: Partial<User>): void => {
+    authService.updateUserData(updates);
+    setUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
+  };
+
   return {
     user,
     isAuthenticated: !!user,
     loading,
     login,
     register,
-    logout
+    logout,
+    updateUser
   };
 };
 
