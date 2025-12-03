@@ -11,4 +11,5 @@
 
 # Environment variables (optional - set these in Netlify UI instead for security)
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20.19.0"
+ 

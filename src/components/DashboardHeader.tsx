@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiSearch, FiBell, FiUser, FiLogOut, FiPlus } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import { Button } from './Button';
+import CreatePostModal from './CreatePostModal';
 
 const DashboardHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -62,7 +64,12 @@ const DashboardHeader: React.FC = () => {
             </button>
 
             {/* Create Post Button */}
-            <Button variant="primary" size="small" className="flex items-center text-xs sm:text-sm">
+            <Button 
+              variant="primary" 
+              size="small" 
+              className="flex items-center text-xs sm:text-sm"
+              onClick={() => setIsCreatePostOpen(true)}
+            >
               <FiPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">{user?.role === 'artisan' ? 'Share Work' : 'Post Job'}</span>
               <span className="sm:hidden">+</span>
@@ -108,6 +115,15 @@ const DashboardHeader: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <CreatePostModal 
+        isOpen={isCreatePostOpen}
+        onClose={() => setIsCreatePostOpen(false)}
+        onSuccess={() => {
+          // Refresh the page or update the feed
+          window.location.reload();
+        }}
+      />
     </header>
   );
 };

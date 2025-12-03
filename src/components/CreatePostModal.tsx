@@ -1,0 +1,362 @@
+import React, { useState } from 'react';
+import { FiX, FiImage, FiMapPin, FiDollarSign, FiCalendar, FiTag } from 'react-icons/fi';
+import useAuth from '../hooks/useAuth';
+import { Button } from './Button';
+import { postService } from '../services/postService';
+
+interface CreatePostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    skills: [] as string[],
+    priceMin: '',
+    priceMax: '',
+    state: '',
+    city: '',
+    deadline: '',
+    jobType: 'one-time' as 'one-time' | 'ongoing' | 'contract',
+  });
+
+  const [newSkill, setNewSkill] = useState('');
+  const [imagePreview, setImagePreview] = useState<string>('');
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image size must be less than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()]
+      }));
+      setNewSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: prev.skills.filter(s => s !== skill)
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const baseData = {
+        title: formData.title,
+        description: formData.description,
+        skills: formData.skills,
+        type: (user?.role === 'artisan' ? 'work' : 'job') as 'work' | 'job',
+        images: imagePreview ? [imagePreview] : undefined,
+        location: (formData.state || formData.city) ? {
+          state: formData.state,
+          city: formData.city,
+        } : undefined,
+      };
+
+      const priceData = (formData.priceMin || formData.priceMax) ? {
+        min: parseFloat(formData.priceMin) || 0,
+        max: parseFloat(formData.priceMax) || 0,
+      } : undefined;
+
+      const postData = {
+        ...baseData,
+        ...(user?.role === 'artisan' ? { priceRange: priceData } : { budget: priceData }),
+        ...(user?.role === 'customer' ? {
+          deadline: formData.deadline || undefined,
+          jobType: formData.jobType,
+        } : {}),
+      };
+
+      await postService.createPost(postData);
+      onSuccess();
+      handleClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create post');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      title: '',
+      description: '',
+      skills: [],
+      priceMin: '',
+      priceMax: '',
+      state: '',
+      city: '',
+      deadline: '',
+      jobType: 'one-time',
+    });
+    setNewSkill('');
+    setImagePreview('');
+    setError('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-900">
+            {user?.role === 'artisan' ? 'Share Your Work' : 'Post a Job'}
+          </h2>
+          <button
+            onClick={handleClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <FiX className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title *
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder={user?.role === 'artisan' ? 'e.g., Custom Oak Dining Table' : 'e.g., Need a Carpenter for Kitchen Renovation'}
+              required
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description *
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder={user?.role === 'artisan' 
+                ? 'Describe your work, materials used, and what makes it special...' 
+                : 'Describe the job, requirements, and what you\'re looking for...'}
+              required
+            />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FiImage className="inline w-4 h-4 mr-1" />
+              Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {imagePreview && (
+              <div className="mt-3 relative">
+                <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+                <button
+                  type="button"
+                  onClick={() => setImagePreview('')}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Skills */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FiTag className="inline w-4 h-4 mr-1" />
+              Skills/Tags
+            </label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={newSkill}
+                onChange={(e) => setNewSkill(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Add a skill or tag"
+              />
+              <Button type="button" onClick={handleAddSkill} variant="secondary">
+                Add
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.skills.map((skill, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm flex items-center"
+                >
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill(skill)}
+                    className="ml-2 text-blue-500 hover:text-blue-700"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Price/Budget */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FiDollarSign className="inline w-4 h-4 mr-1" />
+              {user?.role === 'artisan' ? 'Price Range (₦)' : 'Budget (₦)'}
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                value={formData.priceMin}
+                onChange={(e) => setFormData({ ...formData, priceMin: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Min"
+                min="0"
+              />
+              <input
+                type="number"
+                value={formData.priceMax}
+                onChange={(e) => setFormData({ ...formData, priceMax: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Max"
+                min="0"
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FiMapPin className="inline w-4 h-4 mr-1" />
+              Location
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={formData.state}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="State"
+              />
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="City"
+              />
+            </div>
+          </div>
+
+          {/* Job-specific fields (for customers) */}
+          {user?.role === 'customer' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FiCalendar className="inline w-4 h-4 mr-1" />
+                  Deadline
+                </label>
+                <input
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Job Type
+                </label>
+                <select
+                  value={formData.jobType}
+                  onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'one-time' | 'ongoing' | 'contract' })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="one-time">One-time</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="contract">Contract</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              disabled={loading}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading}
+              className="flex-1"
+            >
+              {loading ? 'Posting...' : 'Post'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreatePostModal;
