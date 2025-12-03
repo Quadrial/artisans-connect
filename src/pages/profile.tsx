@@ -129,7 +129,7 @@ const ProfilePage: React.FC = () => {
         updateUser({ profilePicture: base64String });
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
-      } catch (error) {
+      } catch {
         setError('Failed to upload photo');
         setTimeout(() => setError(''), 3000);
       } finally {
