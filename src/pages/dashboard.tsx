@@ -1,13 +1,14 @@
 // src/pages/dashboard.tsx
 import React, { useState, useEffect } from 'react';
-import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiMapPin, FiStar, FiBookmark, FiSearch, FiFilter, FiGrid, FiList, FiUsers } from 'react-icons/fi';
+// @ts-ignore
+import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiMapPin, FiStar, FiBookmark, FiSearch, FiFilter, FiGrid, FiList, FiUsers, FiUser } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
 import { Button } from '../components/Button';
 import { postService } from '../services/postService';
-// import { Post } from '../types';
+import type { Post } from '../types';
 
 
 
@@ -233,11 +234,17 @@ const DashboardPage: React.FC = () => {
         {/* Post Header */}
         <div className="p-3 sm:p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-            <img
-              src={post.user.profilePicture || '/images/logo3.png'}
-              alt={post.user.username}
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shrink-0"
-            />
+          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+            {post.user.profilePicture || post.user.avatar ? (
+              <img
+                src={post.user.profilePicture || post.user.avatar}
+                alt={post.user.username || post.user.name || ''}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <FiUser className="w-5 h-5 text-gray-600" />
+            )}
+          </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{post.user.username}</h3>
@@ -276,7 +283,7 @@ const DashboardPage: React.FC = () => {
           
           {/* Skills Tags */}
           <div className="flex flex-wrap gap-1 sm:gap-2 mt-3">
-            {post.skills.map((skill, index) => (
+            {post.skills.map((skill: string, index: number) => (
               <span
                 key={index}
                 className="px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 text-xs sm:text-sm rounded-full font-medium"
