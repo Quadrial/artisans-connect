@@ -15,6 +15,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [postType, setPostType] = useState<'work' | 'job'>('work');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -78,7 +79,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
         title: formData.title,
         description: formData.description,
         skills: formData.skills,
-        type: (user?.role === 'artisan' ? 'work' : 'job') as 'work' | 'job',
+        type: (user?.role === 'artisan' ? 'work' : postType) as 'work' | 'job',
         images: imagePreview ? [imagePreview] : undefined,
         location: (formData.state || formData.city) ? {
           state: formData.state,
@@ -93,8 +94,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
 
       const postData = {
         ...baseData,
-        ...(user?.role === 'artisan' ? { priceRange: priceData } : { budget: priceData }),
-        ...(user?.role === 'customer' ? {
+        ...(user?.role === 'artisan' || postType === 'work' ? { priceRange: priceData } : { budget: priceData }),
+        ...(postType === 'job' ? {
           deadline: formData.deadline || undefined,
           jobType: formData.jobType,
         } : {}),
@@ -111,6 +112,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
   };
 
   const handleClose = () => {
+    setPostType('work');
     setFormData({
       title: '',
       description: '',
@@ -134,16 +136,46 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">
-            {user?.role === 'artisan' ? 'Share Your Work' : 'Post a Job'}
-          </h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <FiX className="w-6 h-6" />
-          </button>
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-900">
+              {user?.role === 'artisan' ? 'Share Your Work' : postType === 'job' ? 'Post a Job' : 'Share a Post'}
+            </h2>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </div>
+          
+          {/* Post Type Toggle for Customers */}
+          {user?.role === 'customer' && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPostType('work')}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  postType === 'work'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Regular Post
+              </button>
+              <button
+                type="button"
+                onClick={() => setPostType('job')}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  postType === 'job'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Job Post
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Form */}
@@ -212,11 +244,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
             )}
           </div>
 
-          {/* Skills */}
+          {/* Skills - Only for job posts */}
+          {postType === 'job' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FiTag className="inline w-4 h-4 mr-1" />
-              Skills/Tags
+              Required Skills
             </label>
             <div className="flex gap-2 mb-2">
               <input
@@ -249,12 +282,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
               ))}
             </div>
           </div>
+          )}
 
-          {/* Price/Budget */}
+          {/* Budget - Only for job posts */}
+          {postType === 'job' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FiDollarSign className="inline w-4 h-4 mr-1" />
-              {user?.role === 'artisan' ? 'Price Range (₦)' : 'Budget (₦)'}
+              Budget (₦)
             </label>
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -275,8 +310,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
               />
             </div>
           </div>
+          )}
 
-          {/* Location */}
+          {/* Location - Only for job posts */}
+          {postType === 'job' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FiMapPin className="inline w-4 h-4 mr-1" />
@@ -299,9 +336,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
               />
             </div>
           </div>
+          )}
 
-          {/* Job-specific fields (for customers) */}
-          {user?.role === 'customer' && (
+          {/* Job-specific fields */}
+          {postType === 'job' && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

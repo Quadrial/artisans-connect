@@ -1,5 +1,5 @@
 // Post Service
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL ;
 
 interface PostData {
   title: string;
@@ -141,6 +141,28 @@ class PostService {
 
       if (!response.ok || !result.success) {
         throw new Error(result.message || 'Failed to toggle save');
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error. Please check your connection.');
+    }
+  }
+
+  async deletePost(id: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
+        method: 'DELETE',
+        headers: this.getAuthHeader(),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to delete post');
       }
 
       return result;
