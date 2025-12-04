@@ -1,6 +1,5 @@
 // src/pages/dashboard.tsx
 import React, { useState, useEffect } from 'react';
-// @ts-ignore
 import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiMapPin, FiStar, FiBookmark, FiSearch, FiFilter, FiGrid, FiList, FiUsers, FiUser } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import DashboardHeader from '../components/DashboardHeader';
@@ -8,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
 import { Button } from '../components/Button';
 import { postService } from '../services/postService';
-import type { Post } from '../types';
+import type { Post, PostComment } from '../types';
 
 
 
@@ -31,7 +30,7 @@ const DashboardPage: React.FC = () => {
         const data = await postService.getPosts();
         setPosts(data.posts);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch posts.');
         setLoading(false);
       }
@@ -199,11 +198,29 @@ const DashboardPage: React.FC = () => {
 
   const PostCard = ({ post }: { post: Post }) => {
     const [comment, setComment] = useState('');
+    const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(post.likes.length);
+    const [isSaved, setIsSaved] = useState(false);
+    const [comments, setComments] = useState<PostComment[]>(post.comments);
+    const postId = post._id || post.id;
+    const userId = (user as { _id?: string; id?: string })?._id || user?.id;
+
+    useEffect(() => {
+      // Check if current user has liked the post
+      if (userId) {
+        setIsLiked(post.likes.includes(userId));
+      }
+      // Check if current user has saved the post
+      if (userId && post.saves) {
+        setIsSaved(post.saves.includes(userId));
+      }
+    }, [post.likes, post.saves, userId]);
 
     const handleLike = async () => {
       try {
-        await postService.toggleLike(post.id);
-        // Here you might want to update the post in the posts state
+        const result = await postService.toggleLike(postId);
+        setIsLiked(result.liked);
+        setLikeCount(result.likeCount);
       } catch (error) {
         console.error('Failed to like post', error);
       }
@@ -212,9 +229,9 @@ const DashboardPage: React.FC = () => {
     const handleComment = async () => {
       if (!comment.trim()) return;
       try {
-        await postService.addComment(post.id, comment);
+        const updatedComments = await postService.addComment(postId, comment);
+        setComments(updatedComments);
         setComment('');
-        // Here you might want to update the post in the posts state
       } catch (error) {
         console.error('Failed to add comment', error);
       }
@@ -222,8 +239,8 @@ const DashboardPage: React.FC = () => {
 
     const handleSave = async () => {
       try {
-        await postService.toggleSave(post.id);
-        // Here you might want to update the post in the posts state
+        const result = await postService.toggleSave(postId);
+        setIsSaved(result.saved);
       } catch (error) {
         console.error('Failed to save post', error);
       }
@@ -234,20 +251,22 @@ const DashboardPage: React.FC = () => {
         {/* Post Header */}
         <div className="p-3 sm:p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-            {post.user.profilePicture || post.user.avatar ? (
-              <img
-                src={post.user.profilePicture || post.user.avatar}
-                alt={post.user.username || post.user.name || ''}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <FiUser className="w-5 h-5 text-gray-600" />
-            )}
-          </div>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+              {post.user.profile?.profilePicture ? (
+                <img
+                  src={post.user.profile.profilePicture}
+                  alt={post.user.username || ''}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <FiUser className="w-5 h-5 text-gray-600" />
+              )}
+            </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-1 sm:space-x-2">
-                <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{post.user.username}</h3>
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                  {post.user.profile?.fullName || post.user.username}
+                </h3>
                 {post.user.verified && (
                   <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
                     <span className="text-white text-xs">✓</span>
@@ -255,19 +274,29 @@ const DashboardPage: React.FC = () => {
                 )}
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs sm:text-sm text-gray-500">
-                <span className="truncate">{post.user.role}</span>
-                <div className="flex items-center space-x-2 mt-1 sm:mt-0">
-                  <span className="hidden sm:inline">•</span>
-                  <div className="flex items-center">
-                    <FiMapPin className="w-3 h-3 mr-1" />
-                    <span className="truncate">{post.user.location}</span>
-                  </div>
-                  <span>•</span>
-                  <div className="flex items-center">
-                    <FiStar className="w-3 h-3 mr-1 text-yellow-400 fill-current" />
-                    {post.user.rating}
-                  </div>
-                </div>
+                <span className="truncate capitalize">{post.user.role || 'Artisan'}</span>
+                {(post.user.profile?.city || post.user.profile?.state) && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <div className="flex items-center mt-1 sm:mt-0">
+                      <FiMapPin className="w-3 h-3 mr-1" />
+                      <span className="truncate">
+                        {post.user.profile?.city && post.user.profile?.state
+                          ? `${post.user.profile.city}, ${post.user.profile.state}`
+                          : post.user.profile?.city || post.user.profile?.state}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {post.user.rating && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <div className="flex items-center">
+                      <FiStar className="w-3 h-3 mr-1 text-yellow-400 fill-current" />
+                      {post.user.rating}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -294,9 +323,23 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Price Range */}
-          <div className="mt-3">
-            <span className="text-green-600 font-semibold text-sm sm:text-base">Starting at {post.price}</span>
-          </div>
+          {(post.priceRange || post.price) && (
+            <div className="mt-3">
+              <span className="text-green-600 font-semibold text-sm sm:text-base">
+                {post.priceRange 
+                  ? `$${post.priceRange.min} - $${post.priceRange.max}`
+                  : `Starting at ${post.price}`
+                }
+              </span>
+            </div>
+          )}
+          {post.budget && (
+            <div className="mt-3">
+              <span className="text-blue-600 font-semibold text-sm sm:text-base">
+                Budget: ${post.budget.min} - ${post.budget.max}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Post Images */}
@@ -314,13 +357,18 @@ const DashboardPage: React.FC = () => {
         <div className="px-3 sm:px-4 py-3 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 sm:space-x-6">
-              <button onClick={handleLike} className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-red-500 transition-colors">
-                <FiHeart className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-xs sm:text-sm font-medium">{post.likes.length}</span>
+              <button 
+                onClick={handleLike} 
+                className={`flex items-center space-x-1 sm:space-x-2 transition-colors ${
+                  isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
+                }`}
+              >
+                <FiHeart className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? 'fill-current' : ''}`} />
+                <span className="text-xs sm:text-sm font-medium">{likeCount}</span>
               </button>
-              <button onClick={handleComment} className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
+              <button className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
                 <FiMessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="flex xs sm:text-sm font-medium">{post.comments.length}</span>
+                <span className="text-xs sm:text-sm font-medium">{comments.length}</span>
               </button>
               <button className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-green-500 transition-colors">
                 <FiShare2 className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -328,8 +376,13 @@ const DashboardPage: React.FC = () => {
               </button>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <button onClick={handleSave} className="text-gray-400 hover:text-gray-600 p-1">
-                <FiBookmark className="w-4 h-4 sm:w-5 sm:h-5" />
+              <button 
+                onClick={handleSave} 
+                className={`p-1 transition-colors ${
+                  isSaved ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                <FiBookmark className={`w-4 h-4 sm:w-5 sm:h-5 ${isSaved ? 'fill-current' : ''}`} />
               </button>
               <Button variant="primary" size="small" className="text-xs sm:text-sm">
                 {user?.role === 'customer' ? 'Contact' : 'Connect'}
@@ -337,14 +390,63 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-          <input
-            type="text"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Add a comment..."
-            className="w-full border-gray-300 rounded-md shadow-sm"
-          />
+
+        {/* Comments Section */}
+        {comments.length > 0 && (
+          <div className="px-3 sm:px-4 pb-3 border-t border-gray-100">
+            <div className="space-y-3 mt-3">
+              {comments.slice(0, 3).map((commentItem, index) => (
+                <div key={commentItem._id || index} className="flex items-start space-x-2">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                    {commentItem.user?.profile?.profilePicture ? (
+                      <img
+                        src={commentItem.user.profile.profilePicture}
+                        alt={commentItem.user.username}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <FiUser className="w-4 h-4 text-gray-600" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="bg-gray-50 rounded-lg px-3 py-2">
+                      <p className="text-sm font-semibold text-gray-900">{commentItem.user?.username}</p>
+                      <p className="text-sm text-gray-700">{commentItem.text}</p>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(commentItem.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {comments.length > 3 && (
+                <button className="text-sm text-blue-600 hover:text-blue-700">
+                  View all {comments.length} comments
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Add Comment Input */}
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-gray-100">
+          <div className="flex items-center space-x-2 mt-3">
+            <input
+              type="text"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleComment()}
+              placeholder="Add a comment..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+            <button
+              onClick={handleComment}
+              disabled={!comment.trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium"
+            >
+              Post
+            </button>
+          </div>
         </div>
 
         {/* Time */}
