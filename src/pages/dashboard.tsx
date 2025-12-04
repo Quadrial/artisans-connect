@@ -1,78 +1,43 @@
 // src/pages/dashboard.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiMapPin, FiStar, FiBookmark, FiSearch, FiFilter, FiGrid, FiList, FiUsers } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
 import { Button } from '../components/Button';
+import { postService } from '../services/postService';
+// import { Post } from '../types';
 
-// Mock data for posts
-const mockPosts = [
-  {
-    id: 1,
-    user: {
-      name: 'Maria Rodriguez',
-      role: 'Carpenter',
-      location: 'Austin, TX',
-      avatar: '/images/image.png',
-      rating: 4.9,
-      verified: true
-    },
-    content: 'Just finished this custom dining table made from reclaimed oak. The client wanted something that would last generations, and I think we achieved that! The wood grain tells such a beautiful story.',
-    images: ['/images/image.png'],
-    skills: ['Woodworking', 'Custom Furniture', 'Restoration'],
-    likes: 47,
-    comments: 12,
-    timeAgo: '2 hours ago',
-    price: '$1,200 - $2,500'
-  },
-  {
-    id: 2,
-    user: {
-      name: 'James Chen',
-      role: 'Metalworker',
-      location: 'Portland, OR',
-      avatar: '/images/image 2.png',
-      rating: 4.8,
-      verified: true
-    },
-    content: 'Completed this wrought iron gate for a historic home restoration. Every curve was hand-forged to match the original 1920s design. There\'s something magical about bringing old craftsmanship back to life.',
-    images: ['/images/image 2.png'],
-    skills: ['Blacksmithing', 'Restoration', 'Custom Metalwork'],
-    likes: 63,
-    comments: 18,
-    timeAgo: '5 hours ago',
-    price: '$800 - $1,500'
-  },
-  {
-    id: 3,
-    user: {
-      name: 'Sarah Thompson',
-      role: 'Ceramic Artist',
-      location: 'Santa Fe, NM',
-      avatar: '/images/image.png',
-      rating: 4.9,
-      verified: true
-    },
-    content: 'New collection of handthrown pottery just out of the kiln! Each piece is unique, glazed with my signature earth-tone finish. Perfect for those who appreciate the beauty of imperfection.',
-    images: ['/images/image.png'],
-    skills: ['Pottery', 'Glazing', 'Custom Ceramics'],
-    likes: 89,
-    comments: 24,
-    timeAgo: '1 day ago',
-    price: '$45 - $200'
-  }
-];
+
+
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('feed');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSkill, setSelectedSkill] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [priceRange, setPriceRange] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const data = await postService.getPosts();
+        setPosts(data.posts);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to fetch posts.');
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   // Mock artisan data for search
   const mockArtisans = [
@@ -231,114 +196,157 @@ const DashboardPage: React.FC = () => {
     </div>
   );
 
-  const PostCard = ({ post }: { post: typeof mockPosts[0] }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 sm:mb-6">
-      {/* Post Header */}
-      <div className="p-3 sm:p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-          <img
-            src={post.user.avatar}
-            alt={post.user.name}
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shrink-0"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{post.user.name}</h3>
-              {post.user.verified && (
-                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-white text-xs">✓</span>
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs sm:text-sm text-gray-500">
-              <span className="truncate">{post.user.role}</span>
-              <div className="flex items-center space-x-2 mt-1 sm:mt-0">
-                <span className="hidden sm:inline">•</span>
-                <div className="flex items-center">
-                  <FiMapPin className="w-3 h-3 mr-1" />
-                  <span className="truncate">{post.user.location}</span>
-                </div>
-                <span>•</span>
-                <div className="flex items-center">
-                  <FiStar className="w-3 h-3 mr-1 text-yellow-400 fill-current" />
-                  {post.user.rating}
+  const PostCard = ({ post }: { post: Post }) => {
+    const [comment, setComment] = useState('');
+
+    const handleLike = async () => {
+      try {
+        await postService.toggleLike(post.id);
+        // Here you might want to update the post in the posts state
+      } catch (error) {
+        console.error('Failed to like post', error);
+      }
+    };
+
+    const handleComment = async () => {
+      if (!comment.trim()) return;
+      try {
+        await postService.addComment(post.id, comment);
+        setComment('');
+        // Here you might want to update the post in the posts state
+      } catch (error) {
+        console.error('Failed to add comment', error);
+      }
+    };
+
+    const handleSave = async () => {
+      try {
+        await postService.toggleSave(post.id);
+        // Here you might want to update the post in the posts state
+      } catch (error) {
+        console.error('Failed to save post', error);
+      }
+    };
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 sm:mb-6">
+        {/* Post Header */}
+        <div className="p-3 sm:p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+            <img
+              src={post.user.profilePicture || '/images/logo3.png'}
+              alt={post.user.username}
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{post.user.username}</h3>
+                {post.user.verified && (
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs sm:text-sm text-gray-500">
+                <span className="truncate">{post.user.role}</span>
+                <div className="flex items-center space-x-2 mt-1 sm:mt-0">
+                  <span className="hidden sm:inline">•</span>
+                  <div className="flex items-center">
+                    <FiMapPin className="w-3 h-3 mr-1" />
+                    <span className="truncate">{post.user.location}</span>
+                  </div>
+                  <span>•</span>
+                  <div className="flex items-center">
+                    <FiStar className="w-3 h-3 mr-1 text-yellow-400 fill-current" />
+                    {post.user.rating}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <button className="p-1 sm:p-2 hover:bg-gray-100 rounded-full shrink-0">
-          <FiMoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-        </button>
-      </div>
-
-      {/* Post Content */}
-      <div className="px-3 sm:px-4 pb-3">
-        <p className="text-gray-800 leading-relaxed text-sm sm:text-base">{post.content}</p>
-        
-        {/* Skills Tags */}
-        <div className="flex flex-wrap gap-1 sm:gap-2 mt-3">
-          {post.skills.map((skill, index) => (
-            <span
-              key={index}
-              className="px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 text-xs sm:text-sm rounded-full font-medium"
-            >
-              {skill}
-            </span>
-          ))}
+          <button className="p-1 sm:p-2 hover:bg-gray-100 rounded-full shrink-0">
+            <FiMoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+          </button>
         </div>
 
-        {/* Price Range */}
-        <div className="mt-3">
-          <span className="text-green-600 font-semibold text-sm sm:text-base">Starting at {post.price}</span>
-        </div>
-      </div>
+        {/* Post Content */}
+        <div className="px-3 sm:px-4 pb-3">
+          <h2 className="font-bold text-lg mb-2">{post.title}</h2>
+          <p className="text-gray-800 leading-relaxed text-sm sm:text-base">{post.description}</p>
+          
+          {/* Skills Tags */}
+          <div className="flex flex-wrap gap-1 sm:gap-2 mt-3">
+            {post.skills.map((skill, index) => (
+              <span
+                key={index}
+                className="px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 text-xs sm:text-sm rounded-full font-medium"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
 
-      {/* Post Images */}
-      {post.images.length > 0 && (
+          {/* Price Range */}
+          <div className="mt-3">
+            <span className="text-green-600 font-semibold text-sm sm:text-base">Starting at {post.price}</span>
+          </div>
+        </div>
+
+        {/* Post Images */}
+        {post.images.length > 0 && (
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+            <img
+              src={post.images[0]}
+              alt="Work showcase"
+              className="w-full h-48 sm:h-64 object-cover rounded-lg"
+            />
+          </div>
+        )}
+
+        {/* Post Actions */}
+        <div className="px-3 sm:px-4 py-3 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4 sm:space-x-6">
+              <button onClick={handleLike} className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-red-500 transition-colors">
+                <FiHeart className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm font-medium">{post.likes.length}</span>
+              </button>
+              <button onClick={handleComment} className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
+                <FiMessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="flex xs sm:text-sm font-medium">{post.comments.length}</span>
+              </button>
+              <button className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-green-500 transition-colors">
+                <FiShare2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm font-medium hidden sm:inline">Share</span>
+              </button>
+            </div>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <button onClick={handleSave} className="text-gray-400 hover:text-gray-600 p-1">
+                <FiBookmark className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              <Button variant="primary" size="small" className="text-xs sm:text-sm">
+                {user?.role === 'customer' ? 'Contact' : 'Connect'}
+              </Button>
+            </div>
+          </div>
+        </div>
         <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-          <img
-            src={post.images[0]}
-            alt="Work showcase"
-            className="w-full h-48 sm:h-64 object-cover rounded-lg"
+          <input
+            type="text"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Add a comment..."
+            className="w-full border-gray-300 rounded-md shadow-sm"
           />
         </div>
-      )}
 
-      {/* Post Actions */}
-      <div className="px-3 sm:px-4 py-3 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4 sm:space-x-6">
-            <button className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-red-500 transition-colors">
-              <FiHeart className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium">{post.likes}</span>
-            </button>
-            <button className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
-              <FiMessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="flex xs sm:text-sm font-medium">{post.comments}</span>
-            </button>
-            <button className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-green-500 transition-colors">
-              <FiShare2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">Share</span>
-            </button>
-          </div>
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <button className="text-gray-400 hover:text-gray-600 p-1">
-              <FiBookmark className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <Button variant="primary" size="small" className="text-xs sm:text-sm">
-              {user?.role === 'customer' ? 'Contact' : 'Connect'}
-            </Button>
-          </div>
+        {/* Time */}
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+          <span className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleString()}</span>
         </div>
       </div>
-
-      {/* Time */}
-      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-        <span className="text-xs text-gray-400">{post.timeAgo}</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
@@ -546,7 +554,9 @@ const DashboardPage: React.FC = () => {
 
             {/* Posts Feed */}
             <div className="space-y-6">
-              {activeTab === 'feed' && mockPosts.map((post) => (
+              {loading && <p>Loading posts...</p>}
+              {error && <p className="text-red-500">{error}</p>}
+              {activeTab === 'feed' && !loading && !error && posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
               {activeTab === 'following' && (
