@@ -30,7 +30,7 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await postService.getPosts();
+        const data = await postService.getPosts({ type: 'work' }); // Only fetch work posts, not job posts
         setPosts(data.posts);
         setLoading(false);
       } catch {

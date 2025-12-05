@@ -116,7 +116,7 @@ const MessagesPage: React.FC = () => {
   };
 
   const getOtherUser = (conversation: Conversation) => {
-    return conversation.participants.find((p: any) => {
+    return conversation.participants.find((p: unknown) => {
       const participantId = p._id || p.id;
       return participantId !== userId;
     });
@@ -139,9 +139,9 @@ const MessagesPage: React.FC = () => {
       <Sidebar />
       <DashboardHeader />
 
-      <main className="md:ml-64 h-[calc(100vh-4rem)] flex">
+      <main className="md:ml-64 h-[calc(100vh-4rem)] flex flex-col md:flex-row">
         {/* Conversations List */}
-        <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div className={`w-full md:w-80 bg-white border-r border-gray-200 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-4 border-b border-gray-200">
             <h1 className="text-xl font-bold text-gray-900 mb-3">Messages</h1>
             <div className="relative">
@@ -173,12 +173,12 @@ const MessagesPage: React.FC = () => {
                   <div
                     key={conversation._id}
                     onClick={() => fetchMessages(conversation)}
-                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                    className={`p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors ${
                       selectedConversation?._id === conversation._id ? 'bg-blue-50' : ''
                     }`}
                   >
                     <div className="flex items-start space-x-3">
-                      <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0">
                         {otherUser?.profile?.profilePicture ? (
                           <img
                             src={otherUser.profile.profilePicture}
@@ -191,16 +191,16 @@ const MessagesPage: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-gray-900 truncate">
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                             {otherUser?.profile?.fullName || otherUser?.username}
                           </h3>
                           {unread > 0 && (
-                            <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                            <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5 ml-2 shrink-0">
                               {unread}
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className="text-xs sm:text-sm text-gray-500 truncate">
                           {conversation.lastMessage?.content || 'Start a conversation'}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
@@ -216,13 +216,22 @@ const MessagesPage: React.FC = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-white">
+        <div className={`flex-1 flex flex-col bg-white ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
           {selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="p-3 sm:p-4 border-b border-gray-200 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                  {/* Back button for mobile */}
+                  <button
+                    onClick={() => setSelectedConversation(null)}
+                    className="md:hidden p-2 hover:bg-gray-100 rounded-full shrink-0"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0">
                     {getOtherUser(selectedConversation)?.profile?.profilePicture ? (
                       <img
                         src={getOtherUser(selectedConversation).profile.profilePicture}
@@ -233,8 +242,8 @@ const MessagesPage: React.FC = () => {
                       <FiUser className="w-5 h-5 text-gray-600" />
                     )}
                   </div>
-                  <div>
-                    <h2 className="font-semibold text-gray-900">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                       {getOtherUser(selectedConversation)?.profile?.fullName || 
                        getOtherUser(selectedConversation)?.username}
                     </h2>
@@ -243,7 +252,7 @@ const MessagesPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-full">
+                <button className="p-2 hover:bg-gray-100 rounded-full shrink-0">
                   <FiMoreVertical className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
@@ -258,7 +267,7 @@ const MessagesPage: React.FC = () => {
                       key={message._id}
                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
+                      <div className={`max-w-[75%] sm:max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
                         <div
                           className={`rounded-lg px-4 py-2 ${
                             isOwn
@@ -282,19 +291,19 @@ const MessagesPage: React.FC = () => {
               </div>
 
               {/* Message Input */}
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
+              <form onSubmit={handleSendMessage} className="p-3 sm:p-4 border-t border-gray-200 bg-white">
                 <div className="flex items-center space-x-2">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type a message..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || sending}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                   >
                     <FiSend className="w-5 h-5" />
                   </button>
@@ -302,13 +311,13 @@ const MessagesPage: React.FC = () => {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center p-4">
               <div className="text-center">
-                <FiMessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                <FiMessageCircle className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                   Select a conversation
                 </h2>
-                <p className="text-gray-500">
+                <p className="text-sm sm:text-base text-gray-500">
                   Choose a conversation from the list to start messaging
                 </p>
               </div>
