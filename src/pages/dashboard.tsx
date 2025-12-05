@@ -23,6 +23,9 @@ const DashboardPage: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [priceRange, setPriceRange] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -196,6 +199,42 @@ const DashboardPage: React.FC = () => {
     </div>
   );
 
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setCurrentImageIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % lightboxImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length);
+  };
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        setCurrentImageIndex((prev) => (prev + 1) % lightboxImages.length);
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentImageIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, lightboxImages.length]);
+
   const PostCard = ({ post }: { post: Post }) => {
     const [comment, setComment] = useState('');
     const [isLiked, setIsLiked] = useState(false);
@@ -345,11 +384,91 @@ const DashboardPage: React.FC = () => {
         {/* Post Images */}
         {post.images.length > 0 && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-            <img
-              src={post.images[0]}
-              alt="Work showcase"
-              className="w-full h-48 sm:h-64 object-cover rounded-lg"
-            />
+            {post.images.length === 1 ? (
+              <div 
+                className="cursor-pointer overflow-hidden rounded-lg"
+                onClick={() => openLightbox(post.images, 0)}
+              >
+                <img
+                  src={post.images[0]}
+                  alt="Work showcase"
+                  className="w-full h-auto object-contain max-h-[500px] hover:opacity-95 transition-opacity"
+                />
+              </div>
+            ) : post.images.length === 2 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {post.images.map((image, index) => (
+                  <div 
+                    key={index}
+                    className="cursor-pointer overflow-hidden rounded-lg"
+                    onClick={() => openLightbox(post.images, index)}
+                  >
+                    <img
+                      src={image}
+                      alt={`Work showcase ${index + 1}`}
+                      className="w-full h-64 object-cover hover:opacity-95 transition-opacity"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : post.images.length === 3 ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div 
+                  className="cursor-pointer overflow-hidden rounded-lg col-span-2"
+                  onClick={() => openLightbox(post.images, 0)}
+                >
+                  <img
+                    src={post.images[0]}
+                    alt="Work showcase 1"
+                    className="w-full h-64 object-cover hover:opacity-95 transition-opacity"
+                  />
+                </div>
+                {post.images.slice(1, 3).map((image, index) => (
+                  <div 
+                    key={index + 1}
+                    className="cursor-pointer overflow-hidden rounded-lg"
+                    onClick={() => openLightbox(post.images, index + 1)}
+                  >
+                    <img
+                      src={image}
+                      alt={`Work showcase ${index + 2}`}
+                      className="w-full h-48 object-cover hover:opacity-95 transition-opacity"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {post.images.slice(0, 3).map((image, index) => (
+                  <div 
+                    key={index}
+                    className={`cursor-pointer overflow-hidden rounded-lg ${index === 0 ? 'col-span-2' : ''}`}
+                    onClick={() => openLightbox(post.images, index)}
+                  >
+                    <img
+                      src={image}
+                      alt={`Work showcase ${index + 1}`}
+                      className={`w-full object-cover hover:opacity-95 transition-opacity ${index === 0 ? 'h-64' : 'h-48'}`}
+                    />
+                  </div>
+                ))}
+                {post.images.length > 4 && (
+                  <div 
+                    className="cursor-pointer overflow-hidden rounded-lg relative"
+                    onClick={() => openLightbox(post.images, 3)}
+                  >
+                    <img
+                      src={post.images[3]}
+                      alt="Work showcase 4"
+                      className="w-full h-48 object-cover hover:opacity-95 transition-opacity"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold">+{post.images.length - 4}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -700,6 +819,68 @@ const DashboardPage: React.FC = () => {
       </main>
 
       <BottomNav />
+
+      {/* Image Lightbox Modal */}
+      {lightboxOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center"
+          onClick={closeLightbox}
+        >
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 z-50"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {lightboxImages.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-4 text-white hover:text-gray-300 z-50 bg-black bg-opacity-50 rounded-full p-2"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-4 text-white hover:text-gray-300 z-50 bg-black bg-opacity-50 rounded-full p-2"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+
+          <div 
+            className="max-w-7xl max-h-[90vh] w-full px-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={lightboxImages[currentImageIndex]}
+              alt={`Full size ${currentImageIndex + 1}`}
+              className="w-full h-full object-contain"
+            />
+            {lightboxImages.length > 1 && (
+              <div className="text-center text-white mt-4">
+                <span className="text-lg">
+                  {currentImageIndex + 1} / {lightboxImages.length}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

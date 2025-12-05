@@ -29,27 +29,46 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
   });
 
   const [newSkill, setNewSkill] = useState('');
-  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
+    if (imagePreviews.length + files.length > 5) {
+      setError('You can upload maximum 5 images');
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Image size must be less than 2MB');
-      return;
-    }
+    const newImages: string[] = [];
+    let processedCount = 0;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select only image files');
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Each image must be less than 2MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        newImages.push(reader.result as string);
+        processedCount++;
+        
+        if (processedCount === files.length) {
+          setImagePreviews(prev => [...prev, ...newImages]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddSkill = () => {
@@ -80,7 +99,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
         description: formData.description,
         skills: formData.skills,
         type: (user?.role === 'artisan' ? 'work' : postType) as 'work' | 'job',
-        images: imagePreview ? [imagePreview] : undefined,
         location: (formData.state || formData.city) ? {
           state: formData.state,
           city: formData.city,
@@ -94,6 +112,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
 
       const postData = {
         ...baseData,
+        images: imagePreviews.length > 0 ? imagePreviews : undefined,
         ...(user?.role === 'artisan' || postType === 'work' ? { priceRange: priceData } : { budget: priceData }),
         ...(postType === 'job' ? {
           deadline: formData.deadline || undefined,
@@ -125,7 +144,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
       jobType: 'one-time',
     });
     setNewSkill('');
-    setImagePreview('');
+    setImagePreviews([]);
     setError('');
     onClose();
   };
@@ -222,26 +241,33 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FiImage className="inline w-4 h-4 mr-1" />
-              Image
+              Images (Max 5)
             </label>
             <input
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageUpload}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={imagePreviews.length >= 5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
-            {imagePreview && (
-              <div className="mt-3 relative">
-                <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
-                <button
-                  type="button"
-                  onClick={() => setImagePreview('')}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                >
-                  <FiX className="w-4 h-4" />
-                </button>
+            {imagePreviews.length > 0 && (
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative">
+                    <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 shadow-lg"
+                    >
+                      <FiX className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
+            <p className="text-xs text-gray-500 mt-1">{imagePreviews.length}/5 images uploaded</p>
           </div>
 
           {/* Skills - Only for job posts */}
