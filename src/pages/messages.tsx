@@ -116,7 +116,7 @@ const MessagesPage: React.FC = () => {
   };
 
   const getOtherUser = (conversation: Conversation) => {
-    return conversation.participants.find((p: unknown) => {
+    return conversation.participants.find((p: any) => {
       const participantId = p._id || p.id;
       return participantId !== userId;
     });
