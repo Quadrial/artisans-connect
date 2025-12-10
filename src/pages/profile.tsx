@@ -11,6 +11,7 @@ import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
 import { Button } from '../components/Button';
+import VerificationStatus from '../components/VerificationStatus';
 import profileService from '../services/profileService';
 
 // Nigerian States
@@ -603,6 +604,16 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Identity Verification */}
+            <VerificationStatus 
+              onVerificationUpdate={(verified) => {
+                if (verified) {
+                  setSuccess(true);
+                  setTimeout(() => setSuccess(false), 3000);
+                }
+              }}
+            />
           </div>
 
           {/* Right Column - Bio & Skills */}

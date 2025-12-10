@@ -1,0 +1,358 @@
+import React, { useState, useEffect } from 'react';
+import { FiShield, FiCheck, FiClock, FiX, FiExternalLink, FiInfo } from 'react-icons/fi';
+import { Button } from './Button';
+
+interface VerificationData {
+  status: 'none' | 'initiated' | 'pending' | 'verified' | 'rejected';
+  isVerified: boolean;
+  level?: string;
+  trustScore: number;
+  completedAt?: string;
+  blockchain: {
+    verified: boolean;
+    hash?: string;
+    txHash?: string;
+    network?: string;
+  };
+}
+
+interface VerificationStatusProps {
+  onVerificationUpdate?: (verified: boolean) => void;
+}
+
+const VerificationStatus: React.FC<VerificationStatusProps> = ({ 
+  onVerificationUpdate 
+}) => {
+  const [verification, setVerification] = useState<VerificationData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [initiating, setInitiating] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadVerificationStatus();
+  }, []);
+
+  const loadVerificationStatus = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/verification/status`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+        },
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setVerification(result.verification);
+      }
+    } catch (error) {
+      console.error('Error loading verification status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const initiateVerification = async () => {
+    try {
+      setInitiating(true);
+      setError('');
+
+      // Open window immediately to avoid popup blocker
+      const verificationWindow = window.open('about:blank', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+      
+      if (!verificationWindow) {
+        setError('Please allow popups for this site to complete verification');
+        setInitiating(false);
+        return;
+      }
+
+      // Show loading message in the new window
+      verificationWindow.document.write(`
+        <html>
+          <head><title>Starting Verification...</title></head>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h2>Starting Identity Verification...</h2>
+            <p>Please wait while we prepare your verification session.</p>
+            <div style="margin: 20px;">
+              <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            </div>
+            <style>
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          </body>
+        </html>
+      `);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/verification/initiate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Redirect the opened window to Didit verification
+        verificationWindow.location.href = result.verificationUrl;
+        
+        // Update local state
+        setVerification(prev => prev ? {
+          ...prev,
+          status: 'initiated'
+        } : null);
+
+        // Start polling for status updates
+        startStatusPolling();
+      } else {
+        // Close the window and show error
+        verificationWindow.close();
+        setError(result.message || 'Failed to initiate verification');
+      }
+    } catch (error) {
+      console.error('Error initiating verification:', error);
+      setError('Failed to start verification process');
+    } finally {
+      setInitiating(false);
+    }
+  };
+
+  const startStatusPolling = () => {
+    const pollInterval = setInterval(async () => {
+      await loadVerificationStatus();
+      
+      // Stop polling if verification is complete
+      if (verification?.status === 'verified' || verification?.status === 'rejected') {
+        clearInterval(pollInterval);
+        if (onVerificationUpdate) {
+          onVerificationUpdate(verification.status === 'verified');
+        }
+      }
+    }, 5000); // Poll every 5 seconds
+
+    // Stop polling after 10 minutes
+    setTimeout(() => clearInterval(pollInterval), 10 * 60 * 1000);
+  };
+
+  const getStatusIcon = () => {
+    if (!verification) return <FiShield className="w-5 h-5 text-gray-400" />;
+
+    switch (verification.status) {
+      case 'verified':
+        return <FiCheck className="w-5 h-5 text-green-500" />;
+      case 'pending':
+      case 'initiated':
+        return <FiClock className="w-5 h-5 text-yellow-500" />;
+      case 'rejected':
+        return <FiX className="w-5 h-5 text-red-500" />;
+      default:
+        return <FiShield className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
+  const getStatusText = () => {
+    if (!verification) return 'Not Verified';
+
+    switch (verification.status) {
+      case 'verified':
+        return 'Identity Verified';
+      case 'pending':
+        return 'Verification Pending';
+      case 'initiated':
+        return 'Verification Started';
+      case 'rejected':
+        return 'Verification Failed';
+      default:
+        return 'Not Verified';
+    }
+  };
+
+  const getStatusColor = () => {
+    if (!verification) return 'text-gray-600';
+
+    switch (verification.status) {
+      case 'verified':
+        return 'text-green-600';
+      case 'pending':
+      case 'initiated':
+        return 'text-yellow-600';
+      case 'rejected':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          {getStatusIcon()}
+          <div>
+            <h3 className="font-semibold text-gray-900">Identity Verification</h3>
+            <p className={`text-sm ${getStatusColor()}`}>{getStatusText()}</p>
+          </div>
+        </div>
+
+        {verification?.status === 'none' && (
+          <Button
+            variant="primary"
+            size="small"
+            onClick={initiateVerification}
+            disabled={initiating}
+            className="flex items-center space-x-2"
+          >
+            <FiShield className="w-4 h-4" />
+            <span>{initiating ? 'Starting...' : 'Verify Identity'}</span>
+          </Button>
+        )}
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      {verification && (
+        <div className="space-y-3">
+          {/* Trust Score */}
+          {verification.trustScore > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Trust Score</span>
+              <div className="flex items-center space-x-2">
+                <div className="w-20 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full" 
+                    style={{ width: `${verification.trustScore}%` }}
+                  ></div>
+                </div>
+                <span className="text-sm font-medium text-gray-900">
+                  {verification.trustScore}/100
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Verification Level */}
+          {verification.level && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Verification Level</span>
+              <span className="text-sm font-medium text-gray-900 capitalize">
+                {verification.level}
+              </span>
+            </div>
+          )}
+
+          {/* Blockchain Verification */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Blockchain Verified</span>
+            <div className="flex items-center space-x-2">
+              {verification.blockchain.verified ? (
+                <FiCheck className="w-4 h-4 text-green-500" />
+              ) : (
+                <FiX className="w-4 h-4 text-gray-400" />
+              )}
+              <span className="text-sm text-gray-900">
+                {verification.blockchain.verified ? 'Yes' : 'No'}
+              </span>
+            </div>
+          </div>
+
+          {/* Blockchain Hash (for verified users) */}
+          {verification.blockchain.verified && verification.blockchain.hash && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-700">Blockchain Hash</span>
+                <div className="flex items-center space-x-1">
+                  <span className="text-xs text-gray-500">
+                    {verification.blockchain.network?.toUpperCase()}
+                  </span>
+                  <FiInfo className="w-3 h-3 text-gray-400" />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <code className="text-xs text-gray-600 bg-white px-2 py-1 rounded border flex-1 truncate">
+                  {verification.blockchain.hash}
+                </code>
+                {verification.blockchain.txHash && (
+                  <button
+                    onClick={() => {
+                      // In production, this would link to Cardano explorer
+                      alert(`Transaction Hash: ${verification.blockchain.txHash}`);
+                    }}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    <FiExternalLink className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Completion Date */}
+          {verification.completedAt && (
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>Verified on</span>
+              <span>{new Date(verification.completedAt).toLocaleDateString()}</span>
+            </div>
+          )}
+
+          {/* Status Messages */}
+          {verification.status === 'initiated' && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <FiInfo className="w-4 h-4 inline mr-2" />
+                Complete your verification in the opened window. This page will update automatically.
+              </p>
+            </div>
+          )}
+
+          {verification.status === 'pending' && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-700">
+                <FiClock className="w-4 h-4 inline mr-2" />
+                Your verification is being reviewed. This usually takes 1-2 business days.
+              </p>
+            </div>
+          )}
+
+          {verification.status === 'rejected' && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">
+                <FiX className="w-4 h-4 inline mr-2" />
+                Verification was not successful. Please try again or contact support.
+              </p>
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={initiateVerification}
+                disabled={initiating}
+                className="mt-2"
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default VerificationStatus;
