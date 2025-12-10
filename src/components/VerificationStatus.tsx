@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiShield, FiCheck, FiClock, FiX, FiExternalLink, FiInfo } from 'react-icons/fi';
+import { FiShield, FiCheck, FiClock, FiX, FiExternalLink, FiInfo, FiRefreshCw } from 'react-icons/fi';
 import { Button } from './Button';
 
 interface VerificationData {
@@ -28,6 +28,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
   const [loading, setLoading] = useState(false);
   const [initiating, setInitiating] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -170,9 +171,45 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
     }
   };
 
+  const simulateComplete = async () => {
+    try {
+      setCompleting(true);
+      setError('');
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/verification/simulate-complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Reload verification status
+        await loadVerificationStatus();
+        if (onVerificationUpdate) {
+          onVerificationUpdate(true);
+        }
+      } else {
+        setError(result.message || 'Failed to complete verification');
+      }
+    } catch (error) {
+      console.error('Error completing verification:', error);
+      setError('Failed to complete verification');
+    } finally {
+      setCompleting(false);
+    }
+  };
+
   const startStatusPolling = () => {
+    let pollCount = 0;
+    const maxPolls = 120; // 10 minutes at 5-second intervals
+    
     const pollInterval = setInterval(async () => {
       await loadVerificationStatus();
+      pollCount++;
       
       // Stop polling if verification is complete
       if (verification?.status === 'verified' || verification?.status === 'rejected') {
@@ -180,11 +217,17 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
         if (onVerificationUpdate) {
           onVerificationUpdate(verification.status === 'verified');
         }
+        return;
+      }
+      
+      // Stop polling after max attempts
+      if (pollCount >= maxPolls) {
+        clearInterval(pollInterval);
+        console.log('Stopped polling after 10 minutes');
       }
     }, 5000); // Poll every 5 seconds
 
-    // Stop polling after 10 minutes
-    setTimeout(() => clearInterval(pollInterval), 10 * 60 * 1000);
+    return pollInterval;
   };
 
   const isSessionExpired = () => {
@@ -291,19 +334,35 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
         )}
 
         {(verification?.status === 'initiated' || verification?.status === 'pending') && (
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="secondary"
-              size="small"
-              onClick={resetVerification}
-              disabled={resetting}
-              className="flex items-center space-x-2"
-            >
-              <FiX className="w-4 h-4" />
-              <span>{resetting ? 'Resetting...' : 'Start Over'}</span>
-            </Button>
-            {isSessionExpired() && (
-              <span className="text-xs text-orange-600">Session expired</span>
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={resetVerification}
+                disabled={resetting}
+                className="flex items-center space-x-2"
+              >
+                <FiX className="w-4 h-4" />
+                <span>{resetting ? 'Resetting...' : 'Start Over'}</span>
+              </Button>
+              {isSessionExpired() && (
+                <span className="text-xs text-orange-600">Session expired</span>
+              )}
+            </div>
+            
+            {/* Development Helper - Remove in production */}
+            {import.meta.env.DEV && verification?.status === 'initiated' && (
+              <Button
+                variant="primary"
+                size="small"
+                onClick={simulateComplete}
+                disabled={completing}
+                className="flex items-center space-x-2 bg-green-600 hover:bg-green-700"
+              >
+                <FiCheck className="w-4 h-4" />
+                <span>{completing ? 'Completing...' : 'Mark as Complete (Dev)'}</span>
+              </Button>
             )}
           </div>
         )}
@@ -412,13 +471,37 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
           {/* Status Messages */}
           {verification.status === 'initiated' && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-700">
-                <FiInfo className="w-4 h-4 inline mr-2" />
-                {isSessionExpired() 
-                  ? 'Verification session expired. Click "Start Over" to begin again.'
-                  : 'Complete your verification in the opened window. This page will update automatically.'
-                }
-              </p>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-blue-700">
+                    <FiInfo className="w-4 h-4 inline mr-2" />
+                    {isSessionExpired() 
+                      ? 'Verification session expired. Click "Start Over" to begin again.'
+                      : 'Complete your verification in the opened window. This page will update automatically.'
+                    }
+                  </p>
+                  {!isSessionExpired() && (
+                    <p className="text-xs text-blue-600 mt-2">
+                      Completed verification? 
+                      <button 
+                        onClick={loadVerificationStatus}
+                        className="ml-1 underline hover:no-underline"
+                      >
+                        Refresh status
+                      </button>
+                    </p>
+                  )}
+                </div>
+                {!isSessionExpired() && (
+                  <button
+                    onClick={loadVerificationStatus}
+                    disabled={loading}
+                    className="ml-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
+              </div>
               {isSessionExpired() && (
                 <Button
                   variant="primary"
