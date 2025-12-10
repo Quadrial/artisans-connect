@@ -8,6 +8,7 @@ interface VerificationData {
   level?: string;
   trustScore: number;
   completedAt?: string;
+  expiresAt?: string;
   blockchain: {
     verified: boolean;
     hash?: string;
@@ -26,6 +27,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
   const [verification, setVerification] = useState<VerificationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [initiating, setInitiating] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -60,8 +62,26 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
       // Open window immediately to avoid popup blocker
       const verificationWindow = window.open('about:blank', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
       
-      if (!verificationWindow) {
-        setError('Please allow popups for this site to complete verification');
+      if (!verificationWindow || verificationWindow.closed) {
+        // Fallback: redirect in same tab if popup is blocked
+        setError('Popup blocked. Redirecting to verification page...');
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/verification/initiate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+          },
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Redirect in same tab as fallback
+          window.location.href = result.verificationUrl;
+        } else {
+          setError(result.message || 'Failed to initiate verification');
+        }
         setInitiating(false);
         return;
       }
@@ -121,6 +141,35 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
     }
   };
 
+  const resetVerification = async () => {
+    try {
+      setResetting(true);
+      setError('');
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/verification/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+        },
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Reload verification status
+        await loadVerificationStatus();
+      } else {
+        setError(result.message || 'Failed to reset verification');
+      }
+    } catch (error) {
+      console.error('Error resetting verification:', error);
+      setError('Failed to reset verification');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const startStatusPolling = () => {
     const pollInterval = setInterval(async () => {
       await loadVerificationStatus();
@@ -136,6 +185,20 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
 
     // Stop polling after 10 minutes
     setTimeout(() => clearInterval(pollInterval), 10 * 60 * 1000);
+  };
+
+  const isSessionExpired = () => {
+    if (!verification || verification.status === 'none' || verification.status === 'verified') {
+      return false;
+    }
+
+    if (verification.expiresAt) {
+      return new Date() > new Date(verification.expiresAt);
+    }
+
+    // If no expiresAt, consider initiated status expired after 2 hours
+    // This is a fallback for sessions created before expiration was added
+    return verification.status === 'initiated';
   };
 
   const getStatusIcon = () => {
@@ -210,22 +273,55 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
         </div>
 
         {verification?.status === 'none' && (
-          <Button
-            variant="primary"
-            size="small"
-            onClick={initiateVerification}
-            disabled={initiating}
-            className="flex items-center space-x-2"
-          >
-            <FiShield className="w-4 h-4" />
-            <span>{initiating ? 'Starting...' : 'Verify Identity'}</span>
-          </Button>
+          <div className="space-y-2">
+            <Button
+              variant="primary"
+              size="small"
+              onClick={initiateVerification}
+              disabled={initiating}
+              className="flex items-center space-x-2"
+            >
+              <FiShield className="w-4 h-4" />
+              <span>{initiating ? 'Starting...' : 'Verify Identity'}</span>
+            </Button>
+            <p className="text-xs text-gray-500">
+              Opens verification in new window. Please allow popups if prompted.
+            </p>
+          </div>
+        )}
+
+        {(verification?.status === 'initiated' || verification?.status === 'pending') && (
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={resetVerification}
+              disabled={resetting}
+              className="flex items-center space-x-2"
+            >
+              <FiX className="w-4 h-4" />
+              <span>{resetting ? 'Resetting...' : 'Start Over'}</span>
+            </Button>
+            {isSessionExpired() && (
+              <span className="text-xs text-orange-600">Session expired</span>
+            )}
+          </div>
         )}
       </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-600">{error}</p>
+          {error.includes('popup') && (
+            <div className="mt-2 text-xs text-red-500">
+              <p><strong>To enable popups:</strong></p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Chrome: Click the popup icon in address bar</li>
+                <li>Firefox: Click "Options" → "Allow popups"</li>
+                <li>Safari: Safari menu → Preferences → Websites → Pop-ups</li>
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
@@ -318,8 +414,22 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700">
                 <FiInfo className="w-4 h-4 inline mr-2" />
-                Complete your verification in the opened window. This page will update automatically.
+                {isSessionExpired() 
+                  ? 'Verification session expired. Click "Start Over" to begin again.'
+                  : 'Complete your verification in the opened window. This page will update automatically.'
+                }
               </p>
+              {isSessionExpired() && (
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={resetVerification}
+                  disabled={resetting}
+                  className="mt-2"
+                >
+                  Start Over
+                </Button>
+              )}
             </div>
           )}
 
@@ -328,6 +438,9 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
               <p className="text-sm text-yellow-700">
                 <FiClock className="w-4 h-4 inline mr-2" />
                 Your verification is being reviewed. This usually takes 1-2 business days.
+              </p>
+              <p className="text-xs text-yellow-600 mt-1">
+                If you haven't heard back in 3 days, you can start over.
               </p>
             </div>
           )}
@@ -341,8 +454,8 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
               <Button
                 variant="secondary"
                 size="small"
-                onClick={initiateVerification}
-                disabled={initiating}
+                onClick={resetVerification}
+                disabled={resetting}
                 className="mt-2"
               >
                 Try Again
