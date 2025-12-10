@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   FiUser, FiMapPin, FiPhone, FiMail, FiBriefcase, FiDollarSign, 
-  FiCamera, FiEdit2, FiX, FiCheck, FiAlertCircle, FiAward, FiClock, FiArrowLeft 
+  FiCamera, FiEdit2, FiX, FiCheck, FiAlertCircle, FiAward, FiClock, FiArrowLeft,
+  FiHeart, FiMessageCircle, FiBookmark, FiMoreHorizontal, FiTrash2, FiEdit3
 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -42,6 +43,39 @@ interface ProfileData {
   skills: string[];
 }
 
+interface Post {
+  _id: string;
+  title: string;
+  description: string;
+  images: string[];
+  type: 'work' | 'job';
+  likes: string[];
+  comments: Array<{
+    _id: string;
+    user: {
+      _id: string;
+      username: string;
+      profile?: {
+        profilePicture?: string;
+        fullName?: string;
+      };
+    };
+    text: string;
+    createdAt: string;
+  }>;
+  saves: string[];
+  views: number;
+  createdAt: string;
+  user: {
+    _id: string;
+    username: string;
+    profile?: {
+      profilePicture?: string;
+      fullName?: string;
+    };
+  };
+}
+
 const ProfilePage: React.FC = () => {
   const { user, updateUser } = useAuth();
   
@@ -71,6 +105,13 @@ const ProfilePage: React.FC = () => {
   const [editData, setEditData] = useState<ProfileData>(profileData);
   const [profilePicture, setProfilePicture] = useState<string>('');
   const [newSkill, setNewSkill] = useState('');
+  
+  // Posts state
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'posts'>('profile');
+  const [showPostOptions, setShowPostOptions] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
 
   // Load profile data
   useEffect(() => {
@@ -102,6 +143,44 @@ const ProfilePage: React.FC = () => {
     
     loadProfile();
   }, [user?.email]);
+
+  // Load user posts
+  useEffect(() => {
+    const loadUserPosts = async () => {
+      if (activeTab === 'posts') {
+        setLoadingPosts(true);
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/posts/user`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+            },
+          });
+          const result = await response.json();
+          if (result.success) {
+            setUserPosts(result.posts);
+          }
+        } catch (error) {
+          console.error('Error loading posts:', error);
+        } finally {
+          setLoadingPosts(false);
+        }
+      }
+    };
+
+    loadUserPosts();
+  }, [activeTab]);
+
+  // Close post options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowPostOptions(null);
+    };
+
+    if (showPostOptions) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showPostOptions]);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -225,6 +304,99 @@ const ProfilePage: React.FC = () => {
     }));
   };
 
+  // Post management functions
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        setUserPosts(prev => prev.filter(post => post._id !== postId));
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      setError('Failed to delete post');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleLikePost = async (postId: string) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+        },
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setUserPosts(prev => prev.map(post => {
+          if (post._id === postId) {
+            const isLiked = result.liked;
+            const newLikes = isLiked 
+              ? [...post.likes, user?.id || '']
+              : post.likes.filter(id => id !== user?.id);
+            return { ...post, likes: newLikes };
+          }
+          return post;
+        }));
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
+
+  const handleAddComment = async (postId: string) => {
+    const commentText = newComment[postId]?.trim();
+    if (!commentText) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
+        },
+        body: JSON.stringify({ text: commentText }),
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setUserPosts(prev => prev.map(post => {
+          if (post._id === postId) {
+            return { ...post, comments: result.comments };
+          }
+          return post;
+        }));
+        setNewComment(prev => ({ ...prev, [postId]: '' }));
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
       <Sidebar />
@@ -329,8 +501,36 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Profile Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Tabs */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`px-6 py-4 font-medium text-sm ${
+                activeTab === 'profile'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Profile Information
+            </button>
+            <button
+              onClick={() => setActiveTab('posts')}
+              className={`px-6 py-4 font-medium text-sm ${
+                activeTab === 'posts'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              My Posts ({userPosts.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'profile' ? (
+          /* Profile Content Grid */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Contact & Location */}
           <div className="space-y-6">
             {/* Contact Information */}
@@ -437,6 +637,218 @@ const ProfilePage: React.FC = () => {
             )}
           </div>
         </div>
+        ) : (
+          /* Posts Tab Content */
+          <div className="space-y-6">
+            {loadingPosts ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Loading posts...</p>
+              </div>
+            ) : userPosts.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+                <div className="text-gray-400 mb-4">
+                  <FiEdit3 className="w-12 h-12 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
+                <p className="text-gray-500 mb-4">Share your work or post a job to get started</p>
+                <Button
+                  variant="primary"
+                  onClick={() => navigate('/jobs')}
+                  className="mx-auto"
+                >
+                  Create Your First Post
+                </Button>
+              </div>
+            ) : (
+              /* Posts List */
+              <div className="space-y-6">
+                {userPosts.map((post) => (
+                  <div key={post._id} className="bg-white rounded-xl shadow-sm border border-gray-200">
+                    {/* Post Header */}
+                    <div className="p-6 border-b border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                            {profilePicture ? (
+                              <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <FiUser className="w-5 h-5 text-gray-600" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              {profileData.fullName || user?.username}
+                            </h4>
+                            <p className="text-sm text-gray-500">{formatTimeAgo(post.createdAt)}</p>
+                          </div>
+                        </div>
+                        
+                        {/* Post Options */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowPostOptions(showPostOptions === post._id ? null : post._id)}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            <FiMoreHorizontal className="w-5 h-5" />
+                          </button>
+                          
+                          {showPostOptions === post._id && (
+                            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                              <button
+                                onClick={() => {
+                                  navigate(`/jobs?edit=${post._id}`);
+                                  setShowPostOptions(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                              >
+                                <FiEdit2 className="w-4 h-4 mr-2" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDeletePost(post._id);
+                                  setShowPostOptions(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
+                              >
+                                <FiTrash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Post Content */}
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
+                      <p className="text-gray-700 mb-4">{post.description}</p>
+                      
+                      {/* Post Images */}
+                      {post.images && post.images.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                          {post.images.slice(0, 4).map((image, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={image}
+                                alt={`Post image ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                              {index === 3 && post.images.length > 4 && (
+                                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+                                  <span className="text-white font-medium">+{post.images.length - 4}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Post Stats */}
+                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <div className="flex items-center space-x-4">
+                          <span>{post.likes.length} likes</span>
+                          <span>{post.comments.length} comments</span>
+                          <span>{post.views} views</span>
+                        </div>
+                        <span className="capitalize px-2 py-1 bg-gray-100 rounded-full text-xs">
+                          {post.type === 'work' ? 'Work Post' : 'Job Post'}
+                        </span>
+                      </div>
+
+                      {/* Post Actions */}
+                      <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                        <button
+                          onClick={() => handleLikePost(post._id)}
+                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                            post.likes.includes(user?.id || '')
+                              ? 'text-red-600 bg-red-50'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <FiHeart className={`w-4 h-4 ${post.likes.includes(user?.id || '') ? 'fill-current' : ''}`} />
+                          <span>Like</span>
+                        </button>
+                        
+                        <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50">
+                          <FiMessageCircle className="w-4 h-4" />
+                          <span>Comment</span>
+                        </button>
+                        
+                        <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50">
+                          <FiBookmark className="w-4 h-4" />
+                          <span>Save</span>
+                        </button>
+                      </div>
+
+                      {/* Comments Section */}
+                      {post.comments.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <h4 className="font-medium text-gray-900">Comments</h4>
+                          {post.comments.map((comment) => (
+                            <div key={comment._id} className="flex space-x-3">
+                              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {comment.user.profile?.profilePicture ? (
+                                  <img 
+                                    src={comment.user.profile.profilePicture} 
+                                    alt="Commenter" 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                ) : (
+                                  <FiUser className="w-4 h-4 text-gray-600" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="bg-gray-50 rounded-lg px-3 py-2">
+                                  <p className="font-medium text-sm text-gray-900">
+                                    {comment.user.profile?.fullName || comment.user.username}
+                                  </p>
+                                  <p className="text-gray-700 text-sm">{comment.text}</p>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(comment.createdAt)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add Comment */}
+                      <div className="mt-4 flex space-x-3">
+                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {profilePicture ? (
+                            <img src={profilePicture} alt="Your profile" className="w-full h-full object-cover" />
+                          ) : (
+                            <FiUser className="w-4 h-4 text-gray-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 flex space-x-2">
+                          <input
+                            type="text"
+                            value={newComment[post._id] || ''}
+                            onChange={(e) => setNewComment(prev => ({ ...prev, [post._id]: e.target.value }))}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post._id)}
+                            placeholder="Write a comment..."
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <Button
+                            variant="primary"
+                            size="small"
+                            onClick={() => handleAddComment(post._id)}
+                            disabled={!newComment[post._id]?.trim()}
+                          >
+                            Post
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Edit Modal */}

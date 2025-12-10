@@ -119,6 +119,11 @@ const DiscoverPage: React.FC = () => {
       return;
     }
 
+    if (user?.id === artisan._id) {
+      alert('You cannot send a message to yourself');
+      return;
+    }
+
     try {
       await messageService.sendMessage(
         artisan._id,
@@ -376,7 +381,7 @@ const DiscoverPage: React.FC = () => {
                       >
                         View Profile
                       </Button>
-                      {user?.role === 'customer' && (
+                      {user?.role === 'customer' && user?.id !== artisan._id && (
                         <button
                           onClick={() => handleMessageArtisan(artisan)}
                           className="p-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
@@ -499,7 +504,7 @@ const DiscoverPage: React.FC = () => {
                   >
                     Close
                   </button>
-                  {user?.role === 'customer' && (
+                  {user?.role === 'customer' && user?.id !== selectedArtisan?._id && (
                     <button
                       onClick={() => {
                         setShowProfileModal(false);
