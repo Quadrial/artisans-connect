@@ -2,7 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Public Pages
-import LandingPage from './pages';
+// import LandingPage from './pages';
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/login';
 import RegisterPage from './pages/register';
 
@@ -13,6 +14,12 @@ import DiscoverPage from './pages/discover';
 import JobsPage from './pages/jobs';
 import MyHiresPage from './pages/my-hires';
 import MessagesPage from './pages/messages';
+import VerificationPage from './pages/verification';
+
+// Admin Pages
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 
 import './App.css';
 
@@ -52,6 +59,17 @@ function App() {
       {/* Protected Routes - Messages */}
       <Route path="/messages" element={<ProtectedRoute />}>
         <Route index element={<MessagesPage />} />
+      </Route>
+
+      {/* Protected Routes - Verification */}
+      <Route path="/verification" element={<ProtectedRoute />}>
+        <Route index element={<VerificationPage />} />
+      </Route>
+
+      {/* Admin Routes */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
+        <Route index element={<AdminDashboard />} />
       </Route>
     </Routes>
   );

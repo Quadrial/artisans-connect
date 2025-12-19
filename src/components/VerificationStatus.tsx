@@ -26,7 +26,6 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
 }) => {
   const [verification, setVerification] = useState<VerificationData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initiating, setInitiating] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState('');
@@ -55,92 +54,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
     }
   };
 
-  const initiateVerification = async () => {
-    try {
-      setInitiating(true);
-      setError('');
 
-      // Open window immediately to avoid popup blocker
-      const verificationWindow = window.open('about:blank', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-      
-      if (!verificationWindow || verificationWindow.closed) {
-        // Fallback: redirect in same tab if popup is blocked
-        setError('Popup blocked. Redirecting to verification page...');
-        
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/verification/initiate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
-          },
-        });
-
-        const result = await response.json();
-        
-        if (result.success) {
-          // Redirect in same tab as fallback
-          window.location.href = result.verificationUrl;
-        } else {
-          setError(result.message || 'Failed to initiate verification');
-        }
-        setInitiating(false);
-        return;
-      }
-
-      // Show loading message in the new window
-      verificationWindow.document.write(`
-        <html>
-          <head><title>Starting Verification...</title></head>
-          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h2>Starting Identity Verification...</h2>
-            <p>Please wait while we prepare your verification session.</p>
-            <div style="margin: 20px;">
-              <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-            </div>
-            <style>
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            </style>
-          </body>
-        </html>
-      `);
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/verification/initiate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('craft_connect_token')}`,
-        },
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        // Redirect the opened window to Didit verification
-        verificationWindow.location.href = result.verificationUrl;
-        
-        // Update local state
-        setVerification(prev => prev ? {
-          ...prev,
-          status: 'initiated'
-        } : null);
-
-        // Start polling for status updates
-        startStatusPolling();
-      } else {
-        // Close the window and show error
-        verificationWindow.close();
-        setError(result.message || 'Failed to initiate verification');
-      }
-    } catch (error) {
-      console.error('Error initiating verification:', error);
-      setError('Failed to start verification process');
-    } finally {
-      setInitiating(false);
-    }
-  };
 
   const resetVerification = async () => {
     try {
@@ -203,32 +117,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
     }
   };
 
-  const startStatusPolling = () => {
-    let pollCount = 0;
-    const maxPolls = 120; // 10 minutes at 5-second intervals
-    
-    const pollInterval = setInterval(async () => {
-      await loadVerificationStatus();
-      pollCount++;
-      
-      // Stop polling if verification is complete
-      if (verification?.status === 'verified' || verification?.status === 'rejected') {
-        clearInterval(pollInterval);
-        if (onVerificationUpdate) {
-          onVerificationUpdate(verification.status === 'verified');
-        }
-        return;
-      }
-      
-      // Stop polling after max attempts
-      if (pollCount >= maxPolls) {
-        clearInterval(pollInterval);
-        console.log('Stopped polling after 10 minutes');
-      }
-    }, 5000); // Poll every 5 seconds
 
-    return pollInterval;
-  };
 
   const isSessionExpired = () => {
     if (!verification || verification.status === 'none' || verification.status === 'verified') {
@@ -320,15 +209,14 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
             <Button
               variant="primary"
               size="small"
-              onClick={initiateVerification}
-              disabled={initiating}
+              onClick={() => window.location.href = '/verification'}
               className="flex items-center space-x-2"
             >
               <FiShield className="w-4 h-4" />
-              <span>{initiating ? 'Starting...' : 'Verify Identity'}</span>
+              <span>Verify with NIN</span>
             </Button>
             <p className="text-xs text-gray-500">
-              Opens verification in new window. Please allow popups if prompted.
+              Verify your identity using your National Identification Number
             </p>
           </div>
         )}
@@ -436,9 +324,11 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
                 <span className="text-xs font-medium text-gray-700">Blockchain Hash</span>
                 <div className="flex items-center space-x-1">
                   <span className="text-xs text-gray-500">
-                    {verification.blockchain.network?.toUpperCase()}
+                    Cardano {verification.blockchain.network === 'mainnet' ? 'Mainnet' : 'Testnet'}
                   </span>
-                  <FiInfo className="w-3 h-3 text-gray-400" />
+                  <div className={`w-2 h-2 rounded-full ${
+                    verification.blockchain.network === 'mainnet' ? 'bg-green-500' : 'bg-yellow-500'
+                  }`}></div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -448,8 +338,11 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
                 {verification.blockchain.txHash && (
                   <button
                     onClick={() => {
-                      // In production, this would link to Cardano explorer
-                      alert(`Transaction Hash: ${verification.blockchain.txHash}`);
+                      // Open Cardano explorer for mainnet transactions
+                      const explorerUrl = verification.blockchain.network === 'mainnet' 
+                        ? `https://cardanoscan.io/transaction/${verification.blockchain.txHash}`
+                        : `https://preprod.cardanoscan.io/transaction/${verification.blockchain.txHash}`;
+                      window.open(explorerUrl, '_blank');
                     }}
                     className="text-blue-600 hover:text-blue-700"
                   >

@@ -19,6 +19,7 @@ interface User {
   email: string;
   role: 'customer' | 'artisan';
   profilePicture?: string;
+  isVerified?: boolean;
 }
 
 interface ApiResponse {

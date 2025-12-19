@@ -1,0 +1,10 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="200" fill="#FEF2F2"/>
+<circle cx="100" cy="80" r="35" fill="#DBEAFE"/>
+<rect x="70" y="115" width="60" height="85" rx="30" fill="#EF4444"/>
+<circle cx="85" cy="70" r="3" fill="#374151"/>
+<circle cx="115" cy="70" r="3" fill="#374151"/>
+<path d="M90 85 Q100 95 110 85" stroke="#374151" stroke-width="2" fill="none"/>
+<rect x="85" y="125" width="30" height="30" fill="#FBBF24"/>
+<text x="100" y="190" text-anchor="middle" fill="#6B7280" font-family="Arial" font-size="12">David Adewumi</text>
+</svg>

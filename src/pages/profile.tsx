@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   FiUser, FiMapPin, FiPhone, FiMail, FiBriefcase, FiDollarSign, 
   FiCamera, FiEdit2, FiX, FiCheck, FiAlertCircle, FiAward, FiClock, FiArrowLeft,
-  FiHeart, FiMessageCircle, FiBookmark, FiMoreHorizontal, FiTrash2, FiEdit3
+  FiHeart, FiMessageCircle, FiBookmark, FiMoreHorizontal, FiTrash2, FiEdit3, FiShield
 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -404,18 +404,19 @@ const ProfilePage: React.FC = () => {
       <DashboardHeader />
 
       <main className="md:ml-64 max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-         {/* Header */}
-                <div className="mb-6">
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-                  >
-                    <FiArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Dashboard
-                  </button>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Profile</h1>
-                  <p className="text-gray-600 mt-2">Manage your profile information and settings</p>
-                </div>
+        {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <FiArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </button>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Profile</h1>
+          <p className="text-gray-600 mt-2">Manage your profile information and settings</p>
+        </div>
+
         {/* Success/Error Messages */}
         {success && (
           <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center">
@@ -431,426 +432,673 @@ const ProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* Profile Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col md:flex-row items-center md:items-start justify-between">
-            <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
-              {/* Profile Picture */}
-              <div className="relative">
-                <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                  {profilePicture ? (
-                    <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <FiUser className="w-16 h-16 text-gray-600" />
+        {/* NFT-Style Profile Header */}
+        <div className="relative overflow-hidden rounded-2xl shadow-2xl mb-8">
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 opacity-90">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            {/* Animated particles */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute w-2 h-2 bg-white/20 rounded-full animate-pulse" style={{top: '20%', left: '10%', animationDelay: '0s'}}></div>
+              <div className="absolute w-1 h-1 bg-white/30 rounded-full animate-pulse" style={{top: '60%', left: '80%', animationDelay: '1s'}}></div>
+              <div className="absolute w-3 h-3 bg-white/10 rounded-full animate-pulse" style={{top: '80%', left: '20%', animationDelay: '2s'}}></div>
+              <div className="absolute w-1.5 h-1.5 bg-white/25 rounded-full animate-pulse" style={{top: '30%', left: '70%', animationDelay: '1.5s'}}></div>
+            </div>
+          </div>
+
+          <div className="relative z-10 p-8">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between">
+              <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-6 lg:space-y-0 lg:space-x-8">
+                {/* NFT-Style Profile Picture */}
+                <div className="relative group">
+                  {/* Holographic border effect */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 rounded-full opacity-75 group-hover:opacity-100 animate-pulse blur-sm"></div>
+                  <div className="relative w-40 h-40 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full flex items-center justify-center overflow-hidden border-4 border-white/20 backdrop-blur-sm">
+                    {profilePicture ? (
+                      <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <FiUser className="w-20 h-20 text-white/70" />
+                    )}
+                    {/* Verification badge overlay */}
+                    {user?.isVerified && (
+                      <div className="absolute top-2 right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                        <FiCheck className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload button with Web3 styling */}
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                  <label htmlFor="photo-upload">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('photo-upload')?.click()}
+                      disabled={uploadingPhoto}
+                      className="absolute bottom-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-full hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 shadow-lg border border-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                    >
+                      <FiCamera className="w-5 h-5" />
+                    </button>
+                  </label>
+                </div>
+
+                {/* Profile Information with Web3 styling */}
+                <div className="text-center lg:text-left text-white">
+                  <div className="mb-4">
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent mb-2">
+                      {profileData.fullName || user?.username || 'Your Name'}
+                    </h1>
+                    <div className="flex items-center justify-center lg:justify-start space-x-3 mb-3">
+                      <span className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-white/20 capitalize">
+                        {user?.role}
+                      </span>
+                      {user?.isVerified && (
+                        <span className="px-4 py-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-full text-sm font-medium border border-green-400/30 text-green-300 flex items-center">
+                          <FiCheck className="w-3 h-3 mr-1" />
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                    {profileData.profession && (
+                      <p className="text-xl font-semibold text-cyan-300 mb-3">{profileData.profession}</p>
+                    )}
+                  </div>
+
+                  {/* Stats with holographic effect */}
+                  <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                    {profileData.state && (
+                      <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300">
+                        <div className="flex items-center text-sm">
+                          <FiMapPin className="w-4 h-4 mr-2 text-cyan-300" />
+                          <span>{profileData.city}, {profileData.state}</span>
+                        </div>
+                      </div>
+                    )}
+                    {user?.role === 'artisan' && profileData.yearsOfExperience && (
+                      <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300">
+                        <div className="flex items-center text-sm">
+                          <FiClock className="w-4 h-4 mr-2 text-purple-300" />
+                          <span>{profileData.yearsOfExperience} years exp.</span>
+                        </div>
+                      </div>
+                    )}
+                    {user?.role === 'artisan' && profileData.hourlyRate && (
+                      <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300">
+                        <div className="flex items-center text-sm">
+                          <FiDollarSign className="w-4 h-4 mr-2 text-green-300" />
+                          <span>₦{profileData.hourlyRate}/hr</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Skills preview with Web3 styling */}
+                  {user?.role === 'artisan' && profileData.skills.length > 0 && (
+                    <div className="mt-4">
+                      <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                        {profileData.skills.slice(0, 3).map((skill, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-full text-xs font-medium border border-purple-400/30 text-purple-200"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                        {profileData.skills.length > 3 && (
+                          <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-xs font-medium border border-white/20 text-white/70">
+                            +{profileData.skills.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-                <input
-                  type="file"
-                  id="photo-upload"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
-                <label htmlFor="photo-upload">
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('photo-upload')?.click()}
-                    disabled={uploadingPhoto}
-                    className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    <FiCamera className="w-4 h-4" />
-                  </button>
-                </label>
               </div>
 
-              {/* Basic Info */}
-              <div className="text-center md:text-left">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {profileData.fullName || user?.username || 'Your Name'}
-                </h1>
-                <p className="text-gray-600 capitalize">{user?.role}</p>
-                {profileData.profession && (
-                  <p className="text-blue-600 font-medium mt-1">{profileData.profession}</p>
-                )}
-                <div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
-                  {profileData.state && (
-                    <span className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                      <FiMapPin className="w-3 h-3 mr-1" />
-                      {profileData.city}, {profileData.state}
-                    </span>
-                  )}
-                  {user?.role === 'artisan' && profileData.yearsOfExperience && (
-                    <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                      <FiClock className="w-3 h-3 mr-1" />
-                      {profileData.yearsOfExperience} years exp.
-                    </span>
-                  )}
-                </div>
+              {/* Edit Button with Web3 styling */}
+              <div className="mt-6 lg:mt-0">
+                <button
+                  onClick={() => setIsEditMode(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-medium rounded-xl shadow-lg border border-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+                >
+                  <FiEdit2 className="w-5 h-5" />
+                  <span>Edit Profile</span>
+                </button>
               </div>
             </div>
 
-            {/* Edit Button */}
-            <Button
-              variant="primary"
-              size="medium"
-              onClick={() => setIsEditMode(true)}
-              className="mt-4 md:mt-0 flex items-center"
-            >
-              <FiEdit2 className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
+            {/* Bio section with glassmorphism */}
+            {profileData.bio && (
+              <div className="mt-8 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                  <FiUser className="w-5 h-5 mr-2 text-cyan-300" />
+                  About
+                </h3>
+                <p className="text-white/90 leading-relaxed">{profileData.bio}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Blockchain-inspired decorative elements */}
+          <div className="absolute top-4 right-4 text-white/20">
+            <div className="flex items-center space-x-1 text-xs font-mono">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Web3 Profile</span>
+            </div>
           </div>
         </div>
 
-        {/* Profile Tabs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`px-6 py-4 font-medium text-sm ${
-                activeTab === 'profile'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Profile Information
-            </button>
-            <button
-              onClick={() => setActiveTab('posts')}
-              className={`px-6 py-4 font-medium text-sm ${
-                activeTab === 'posts'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              My Posts ({userPosts.length})
-            </button>
+        {/* NFT-Style Profile Tabs */}
+        <div className="relative mb-8">
+          <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 backdrop-blur-sm overflow-hidden">
+            {/* Holographic border effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-cyan-500/10 to-pink-500/10 opacity-50"></div>
+            
+            <div className="relative flex">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`relative px-8 py-5 font-semibold text-sm transition-all duration-300 ${
+                  activeTab === 'profile'
+                    ? 'text-white bg-gradient-to-r from-purple-600/30 to-cyan-600/30 border-b-2 border-cyan-400'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="relative z-10 flex items-center">
+                  <FiUser className="w-4 h-4 mr-2" />
+                  Profile Information
+                </span>
+                {activeTab === 'profile' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-lg"></div>
+                )}
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={`relative px-8 py-5 font-semibold text-sm transition-all duration-300 ${
+                  activeTab === 'posts'
+                    ? 'text-white bg-gradient-to-r from-purple-600/30 to-cyan-600/30 border-b-2 border-cyan-400'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="relative z-10 flex items-center">
+                  <FiEdit3 className="w-4 h-4 mr-2" />
+                  My Posts
+                  <span className="ml-2 px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-xs">
+                    {userPosts.length}
+                  </span>
+                </span>
+                {activeTab === 'posts' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-lg"></div>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Tab Content */}
         {activeTab === 'profile' ? (
-          /* Profile Content Grid */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Contact & Location */}
-          <div className="space-y-6">
-            {/* Contact Information */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h2>
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <FiMail className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="text-gray-900">{profileData.email}</p>
+          /* NFT-Style Profile Content Grid */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Contact & Location */}
+            <div className="space-y-8">
+              {/* Contact Information Card */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300 blur-sm"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 hover:bg-white/95 transition-all duration-300">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-3">
+                      <FiMail className="w-5 h-5 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      Contact Information
+                    </h2>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="flex items-start group/item">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center mr-4 group-hover/item:scale-110 transition-transform duration-200">
+                        <FiMail className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Email</p>
+                        <p className="text-gray-900 font-medium">{profileData.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start group/item">
+                      <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-400 rounded-lg flex items-center justify-center mr-4 group-hover/item:scale-110 transition-transform duration-200">
+                        <FiPhone className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Phone</p>
+                        <p className="text-gray-900 font-medium">{profileData.phone || 'Not provided'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start group/item">
+                      <div className="w-8 h-8 bg-gradient-to-r from-orange-400 to-red-400 rounded-lg flex items-center justify-center mr-4 group-hover/item:scale-110 transition-transform duration-200">
+                        <FiMapPin className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Location</p>
+                        <p className="text-gray-900 font-medium">
+                          {profileData.city && profileData.state
+                            ? `${profileData.city}, ${profileData.state}`
+                            : 'Not provided'}
+                        </p>
+                        {profileData.address && (
+                          <p className="text-sm text-gray-600 mt-1">{profileData.address}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start">
-                  <FiPhone className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="text-gray-900">{profileData.phone || 'Not provided'}</p>
+              </div>
+
+              {/* Professional Info Card (Artisans Only) */}
+              {user?.role === 'artisan' && (
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300 blur-sm"></div>
+                  
+                  <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 p-8 backdrop-blur-sm">
+                    <div className="flex items-center mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center mr-4">
+                        <FiBriefcase className="w-5 h-5 text-white" />
+                      </div>
+                      <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                        Professional Details
+                      </h2>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div className="flex items-start group/item">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 rounded-lg flex items-center justify-center mr-4 group-hover/item:from-purple-500/30 group-hover/item:to-indigo-500/30 transition-all duration-300">
+                          <FiBriefcase className="w-4 h-4 text-purple-300" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-400 mb-1">Profession</p>
+                          <p className="text-white font-medium">{profileData.profession || 'Not specified'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start group/item">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg flex items-center justify-center mr-4 group-hover/item:from-green-500/30 group-hover/item:to-emerald-500/30 transition-all duration-300">
+                          <FiDollarSign className="w-4 h-4 text-green-300" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-400 mb-1">Hourly Rate</p>
+                          <p className="text-white font-medium">
+                            {profileData.hourlyRate ? `₦${profileData.hourlyRate}/hr` : 'Not set'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start group/item">
+                        <div className="w-8 h-8 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-lg flex items-center justify-center mr-4 group-hover/item:from-yellow-500/30 group-hover/item:to-orange-500/30 transition-all duration-300">
+                          <FiAward className="w-4 h-4 text-yellow-300" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-400 mb-1">Experience</p>
+                          <p className="text-white font-medium">
+                            {profileData.yearsOfExperience 
+                              ? `${profileData.yearsOfExperience} years` 
+                              : 'Not specified'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Decorative elements */}
+                    <div className="absolute top-4 right-4 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                    <div className="absolute bottom-4 left-4 w-1 h-1 bg-purple-400 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
                   </div>
                 </div>
-                <div className="flex items-start">
-                  <FiMapPin className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Location</p>
-                    <p className="text-gray-900">
-                      {profileData.city && profileData.state
-                        ? `${profileData.city}, ${profileData.state}`
-                        : 'Not provided'}
+              )}
+
+              {/* Enhanced Identity Verification */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300 blur-sm"></div>
+                
+                <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 p-8 backdrop-blur-sm">
+                  <div className="flex items-center mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl flex items-center justify-center mr-4">
+                      <FiShield className="w-5 h-5 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                      Identity Verification
+                    </h2>
+                  </div>
+                  
+                  <VerificationStatus 
+                    onVerificationUpdate={(verified) => {
+                      if (verified) {
+                        setSuccess(true);
+                        setTimeout(() => setSuccess(false), 3000);
+                      }
+                    }}
+                  />
+                  
+                  {/* Decorative elements */}
+                  <div className="absolute top-4 right-4 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4 w-1 h-1 bg-emerald-400 rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Bio & Skills */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* About/Bio Card */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300 blur-sm"></div>
+                
+                <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 p-8 backdrop-blur-sm">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mr-4">
+                      <FiUser className="w-6 h-6 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                      About Me
+                    </h2>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+                    <p className="text-white/90 leading-relaxed text-lg pl-6">
+                      {profileData.bio || (
+                        <span className="text-gray-400 italic">
+                          No bio added yet. Click "Edit Profile" to add information about yourself and showcase your personality to potential clients.
+                        </span>
+                      )}
                     </p>
-                    {profileData.address && (
-                      <p className="text-sm text-gray-600 mt-1">{profileData.address}</p>
+                  </div>
+                  
+                  {/* Decorative elements */}
+                  <div className="absolute top-4 right-4 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4 w-1 h-1 bg-purple-400 rounded-full animate-pulse" style={{animationDelay: '2s'}}></div>
+                </div>
+              </div>
+
+              {/* Skills Card (Artisans Only) */}
+              {user?.role === 'artisan' && (
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 rounded-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-300 blur-sm"></div>
+                  
+                  <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 p-8 backdrop-blur-sm">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-rose-500 rounded-xl flex items-center justify-center mr-4">
+                        <FiAward className="w-6 h-6 text-white" />
+                      </div>
+                      <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                        Skills & Expertise
+                      </h2>
+                    </div>
+                    
+                    {profileData.skills.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {profileData.skills.map((skill, index) => (
+                          <div
+                            key={index}
+                            className="group/skill relative overflow-hidden"
+                          >
+                            {/* Holographic effect */}
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-rose-500 opacity-0 group-hover/skill:opacity-30 transition-opacity duration-300 rounded-xl blur-sm"></div>
+                            
+                            <div className="relative px-4 py-3 bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-xl text-center hover:shadow-lg transition-all duration-300 hover:scale-105 backdrop-blur-sm">
+                              <span className="text-pink-300 font-medium text-sm">
+                                {skill}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gradient-to-r from-pink-500/20 to-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-pink-500/30">
+                          <FiAward className="w-8 h-8 text-pink-300" />
+                        </div>
+                        <p className="text-gray-400 italic">
+                          No skills added yet. Click "Edit Profile" to showcase your expertise and attract more clients.
+                        </p>
+                      </div>
                     )}
+                    
+                    {/* Decorative elements */}
+                    <div className="absolute top-4 right-4 w-2 h-2 bg-pink-400 rounded-full animate-pulse"></div>
+                    <div className="absolute bottom-4 left-4 w-1 h-1 bg-rose-400 rounded-full animate-pulse" style={{animationDelay: '2.5s'}}></div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-
-            {/* Professional Info (Artisans Only) */}
-            {user?.role === 'artisan' && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Professional Details</h2>
-                <div className="space-y-4">
-                  <div className="flex items-start">
-                    <FiBriefcase className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Profession</p>
-                      <p className="text-gray-900">{profileData.profession || 'Not specified'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <FiDollarSign className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Hourly Rate</p>
-                      <p className="text-gray-900">
-                        {profileData.hourlyRate ? `₦${profileData.hourlyRate}/hr` : 'Not set'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <FiAward className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Experience</p>
-                      <p className="text-gray-900">
-                        {profileData.yearsOfExperience 
-                          ? `${profileData.yearsOfExperience} years` 
-                          : 'Not specified'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Identity Verification */}
-            <VerificationStatus 
-              onVerificationUpdate={(verified) => {
-                if (verified) {
-                  setSuccess(true);
-                  setTimeout(() => setSuccess(false), 3000);
-                }
-              }}
-            />
           </div>
-
-          {/* Right Column - Bio & Skills */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* About/Bio */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">About</h2>
-              <p className="text-gray-700 leading-relaxed">
-                {profileData.bio || 'No bio added yet. Click "Edit Profile" to add information about yourself.'}
-              </p>
-            </div>
-
-            {/* Skills (Artisans Only) */}
-            {user?.role === 'artisan' && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Skills & Expertise</h2>
-                {profileData.skills.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {profileData.skills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No skills added yet. Click "Edit Profile" to add your skills.</p>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
         ) : (
-          /* Posts Tab Content */
-          <div className="space-y-6">
+          /* NFT-Style Posts Tab Content */
+          <div className="space-y-8">
             {loadingPosts ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-500 mt-2">Loading posts...</p>
+              <div className="text-center py-12">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500/20 border-t-purple-500 mx-auto"></div>
+                  <div className="absolute inset-0 animate-ping rounded-full h-12 w-12 border-4 border-purple-500/10 mx-auto"></div>
+                </div>
+                <p className="text-gray-400 mt-4 font-medium">Loading your posts...</p>
               </div>
             ) : userPosts.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-                <div className="text-gray-400 mb-4">
-                  <FiEdit3 className="w-12 h-12 mx-auto" />
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300 blur-sm"></div>
+                
+                <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 p-12 text-center backdrop-blur-sm">
+                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-purple-500/30">
+                    <FiEdit3 className="w-10 h-10 text-purple-300" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">No posts yet</h3>
+                  <p className="text-gray-400 mb-8 text-lg">Share your work or post a job to get started on your Web3 journey</p>
+                  <button
+                    onClick={() => navigate('/jobs')}
+                    className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl shadow-lg border border-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                  >
+                    Create Your First Post
+                  </button>
+                  
+                  {/* Decorative elements */}
+                  <div className="absolute top-6 right-6 w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
+                  <div className="absolute bottom-6 left-6 w-2 h-2 bg-pink-400 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
-                <p className="text-gray-500 mb-4">Share your work or post a job to get started</p>
-                <Button
-                  variant="primary"
-                  onClick={() => navigate('/jobs')}
-                  className="mx-auto"
-                >
-                  Create Your First Post
-                </Button>
               </div>
             ) : (
-              /* Posts List */
-              <div className="space-y-6">
+              /* NFT-Style Posts List */
+              <div className="space-y-8">
                 {userPosts.map((post) => (
-                  <div key={post._id} className="bg-white rounded-xl shadow-sm border border-gray-200">
-                    {/* Post Header */}
-                    <div className="p-6 border-b border-gray-100">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                            {profilePicture ? (
-                              <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                              <FiUser className="w-5 h-5 text-gray-600" />
-                            )}
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">
-                              {profileData.fullName || user?.username}
-                            </h4>
-                            <p className="text-sm text-gray-500">{formatTimeAgo(post.createdAt)}</p>
-                          </div>
-                        </div>
-                        
-                        {/* Post Options */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setShowPostOptions(showPostOptions === post._id ? null : post._id)}
-                            className="text-gray-400 hover:text-gray-600 p-1"
-                          >
-                            <FiMoreHorizontal className="w-5 h-5" />
-                          </button>
-                          
-                          {showPostOptions === post._id && (
-                            <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
-                              <button
-                                onClick={() => {
-                                  navigate(`/jobs?edit=${post._id}`);
-                                  setShowPostOptions(null);
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center"
-                              >
-                                <FiEdit2 className="w-4 h-4 mr-2" />
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => {
-                                  handleDeletePost(post._id);
-                                  setShowPostOptions(null);
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
-                              >
-                                <FiTrash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Post Content */}
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
-                      <p className="text-gray-700 mb-4">{post.description}</p>
-                      
-                      {/* Post Images */}
-                      {post.images && post.images.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2 mb-4">
-                          {post.images.slice(0, 4).map((image, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={image}
-                                alt={`Post image ${index + 1}`}
-                                className="w-full h-32 object-cover rounded-lg"
-                              />
-                              {index === 3 && post.images.length > 4 && (
-                                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
-                                  <span className="text-white font-medium">+{post.images.length - 4}</span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Post Stats */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <div className="flex items-center space-x-4">
-                          <span>{post.likes.length} likes</span>
-                          <span>{post.comments.length} comments</span>
-                          <span>{post.views} views</span>
-                        </div>
-                        <span className="capitalize px-2 py-1 bg-gray-100 rounded-full text-xs">
-                          {post.type === 'work' ? 'Work Post' : 'Job Post'}
-                        </span>
-                      </div>
-
-                      {/* Post Actions */}
-                      <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-                        <button
-                          onClick={() => handleLikePost(post._id)}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                            post.likes.includes(user?.id || '')
-                              ? 'text-red-600 bg-red-50'
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          <FiHeart className={`w-4 h-4 ${post.likes.includes(user?.id || '') ? 'fill-current' : ''}`} />
-                          <span>Like</span>
-                        </button>
-                        
-                        <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50">
-                          <FiMessageCircle className="w-4 h-4" />
-                          <span>Comment</span>
-                        </button>
-                        
-                        <button className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50">
-                          <FiBookmark className="w-4 h-4" />
-                          <span>Save</span>
-                        </button>
-                      </div>
-
-                      {/* Comments Section */}
-                      {post.comments.length > 0 && (
-                        <div className="mt-4 space-y-3">
-                          <h4 className="font-medium text-gray-900">Comments</h4>
-                          {post.comments.map((comment) => (
-                            <div key={comment._id} className="flex space-x-3">
-                              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                                {comment.user.profile?.profilePicture ? (
-                                  <img 
-                                    src={comment.user.profile.profilePicture} 
-                                    alt="Commenter" 
-                                    className="w-full h-full object-cover" 
-                                  />
+                  <div key={post._id} className="relative group">
+                    {/* Holographic border effect */}
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl opacity-20 group-hover:opacity-30 transition-opacity duration-300 blur-sm"></div>
+                    
+                    <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700/50 backdrop-blur-sm overflow-hidden">
+                      {/* NFT-Style Post Header */}
+                      <div className="p-8 border-b border-gray-700/50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-4">
+                            {/* Profile picture with holographic border */}
+                            <div className="relative">
+                              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full opacity-75 animate-pulse blur-sm"></div>
+                              <div className="relative w-12 h-12 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full flex items-center justify-center overflow-hidden border-2 border-white/20">
+                                {profilePicture ? (
+                                  <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
-                                  <FiUser className="w-4 h-4 text-gray-600" />
+                                  <FiUser className="w-6 h-6 text-white/70" />
                                 )}
                               </div>
-                              <div className="flex-1">
-                                <div className="bg-gray-50 rounded-lg px-3 py-2">
-                                  <p className="font-medium text-sm text-gray-900">
-                                    {comment.user.profile?.fullName || comment.user.username}
-                                  </p>
-                                  <p className="text-gray-700 text-sm">{comment.text}</p>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(comment.createdAt)}</p>
-                              </div>
                             </div>
-                          ))}
+                            <div>
+                              <h4 className="font-semibold text-white text-lg">
+                                {profileData.fullName || user?.username}
+                              </h4>
+                              <p className="text-sm text-gray-400">{formatTimeAgo(post.createdAt)}</p>
+                            </div>
+                          </div>
+                          
+                          {/* Post Options */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowPostOptions(showPostOptions === post._id ? null : post._id)}
+                              className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-all duration-300"
+                            >
+                              <FiMoreHorizontal className="w-5 h-5" />
+                            </button>
+                            
+                            {showPostOptions === post._id && (
+                              <div className="absolute right-0 top-12 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl z-10 min-w-[140px] backdrop-blur-sm">
+                                <button
+                                  onClick={() => {
+                                    navigate(`/jobs?edit=${post._id}`);
+                                    setShowPostOptions(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-white hover:bg-gray-700 flex items-center rounded-t-xl"
+                                >
+                                  <FiEdit2 className="w-4 h-4 mr-2" />
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDeletePost(post._id);
+                                    setShowPostOptions(null);
+                                  }}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 flex items-center rounded-b-xl"
+                                >
+                                  <FiTrash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
+                      </div>
 
-                      {/* Add Comment */}
-                      <div className="mt-4 flex space-x-3">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {profilePicture ? (
-                            <img src={profilePicture} alt="Your profile" className="w-full h-full object-cover" />
-                          ) : (
-                            <FiUser className="w-4 h-4 text-gray-600" />
-                          )}
+                      {/* NFT-Style Post Content */}
+                      <div className="p-8">
+                        <h3 className="text-xl font-bold text-white mb-3">{post.title}</h3>
+                        <p className="text-gray-300 mb-6 leading-relaxed">{post.description}</p>
+                      
+                        {/* Post Images */}
+                        {post.images && post.images.length > 0 && (
+                          <div className="grid grid-cols-2 gap-2 mb-4">
+                            {post.images.slice(0, 4).map((image, index) => (
+                              <div key={index} className="relative">
+                                <img
+                                  src={image}
+                                  alt={`Post image ${index + 1}`}
+                                  className="w-full h-32 object-cover rounded-lg"
+                                />
+                                {index === 3 && post.images.length > 4 && (
+                                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+                                    <span className="text-white font-medium">+{post.images.length - 4}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Post Stats */}
+                        <div className="flex items-center justify-between text-sm text-gray-400 mb-6">
+                          <div className="flex items-center space-x-6">
+                            <span className="flex items-center">
+                              <FiHeart className="w-4 h-4 mr-1" />
+                              {post.likes.length} likes
+                            </span>
+                            <span className="flex items-center">
+                              <FiMessageCircle className="w-4 h-4 mr-1" />
+                              {post.comments.length} comments
+                            </span>
+                            <span>{post.views} views</span>
+                          </div>
+                          <span className="capitalize px-3 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full text-xs text-purple-300">
+                            {post.type === 'work' ? 'Work Post' : 'Job Post'}
+                          </span>
                         </div>
-                        <div className="flex-1 flex space-x-2">
-                          <input
-                            type="text"
-                            value={newComment[post._id] || ''}
-                            onChange={(e) => setNewComment(prev => ({ ...prev, [post._id]: e.target.value }))}
-                            onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post._id)}
-                            placeholder="Write a comment..."
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <Button
-                            variant="primary"
-                            size="small"
-                            onClick={() => handleAddComment(post._id)}
-                            disabled={!newComment[post._id]?.trim()}
+
+                        {/* NFT-Style Post Actions */}
+                        <div className="flex items-center justify-between border-t border-gray-700/50 pt-6">
+                          <button
+                            onClick={() => handleLikePost(post._id)}
+                            className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-300 ${
+                              post.likes.includes(user?.id || '')
+                                ? 'text-red-400 bg-red-500/20 border border-red-500/30'
+                                : 'text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-gray-700/50 hover:border-red-500/30'
+                            }`}
                           >
-                            Post
-                          </Button>
+                            <FiHeart className={`w-5 h-5 ${post.likes.includes(user?.id || '') ? 'fill-current' : ''}`} />
+                            <span>Like</span>
+                          </button>
+                        
+                          <button className="flex items-center space-x-2 px-6 py-3 rounded-xl text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 border border-gray-700/50 hover:border-cyan-500/30 transition-all duration-300">
+                            <FiMessageCircle className="w-5 h-5" />
+                            <span>Comment</span>
+                          </button>
+                          
+                          <button className="flex items-center space-x-2 px-6 py-3 rounded-xl text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300">
+                            <FiBookmark className="w-5 h-5" />
+                            <span>Save</span>
+                          </button>
+                        </div>
+
+                        {/* Comments Section */}
+                        {post.comments.length > 0 && (
+                          <div className="mt-4 space-y-3">
+                            <h4 className="font-medium text-white">Comments</h4>
+                            {post.comments.map((comment) => (
+                              <div key={comment._id} className="flex space-x-3">
+                                <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                                  {comment.user.profile?.profilePicture ? (
+                                    <img 
+                                      src={comment.user.profile.profilePicture} 
+                                      alt="Commenter" 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                  ) : (
+                                    <FiUser className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="bg-gray-800/50 rounded-lg px-3 py-2 border border-gray-700/50">
+                                    <p className="font-medium text-sm text-white">
+                                      {comment.user.profile?.fullName || comment.user.username}
+                                    </p>
+                                    <p className="text-gray-300 text-sm">{comment.text}</p>
+                                  </div>
+                                  <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(comment.createdAt)}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Add Comment */}
+                        <div className="mt-6 flex space-x-3">
+                          <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {profilePicture ? (
+                              <img src={profilePicture} alt="Your profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <FiUser className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 flex space-x-2">
+                            <input
+                              type="text"
+                              value={newComment[post._id] || ''}
+                              onChange={(e) => setNewComment(prev => ({ ...prev, [post._id]: e.target.value }))}
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddComment(post._id)}
+                              placeholder="Write a comment..."
+                              className="flex-1 px-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-white placeholder-gray-400"
+                            />
+                            <Button
+                              variant="primary"
+                              size="small"
+                              onClick={() => handleAddComment(post._id)}
+                              disabled={!newComment[post._id]?.trim()}
+                            >
+                              Post
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -861,7 +1109,7 @@ const ProfilePage: React.FC = () => {
           </div>
         )}
       </main>
-
+          
       {/* Edit Modal */}
       {isEditMode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

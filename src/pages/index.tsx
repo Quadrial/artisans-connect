@@ -1,32 +1,51 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FiSearch, FiShield, FiTrendingUp, FiUsers, FiStar, FiCheckCircle } from 'react-icons/fi';
-import { Button } from '../components/Button';
+import { 
+  FiSearch, 
+  FiShield, 
+  FiStar, 
+  FiTrendingUp, 
+  FiUsers, 
+  FiCheckCircle 
+} from 'react-icons/fi';
+import Button from '../components/Button/Button';
 
 const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
-                {/* Logo */}
+              <span className="text-2xl font-bold flex">
                 <img 
-                  src="/images/logo3.png" 
-                  alt="CraftConnect Logo" 
-                  className="w-10 h-10 mr-3 object-contain"
-                />
-                <h1 className="text-2xl font-bold text-gray-900">CraftConnect</h1>
-              </div>
+                src="/images/logo3.png" 
+                alt="CraftConnect Logo" 
+                className="w-8 h-8 mr-3 object-contain"
+              />
+                <span className="text-purple-600">Craft</span>
+                <span className="text-green-500">Connect</span>
+              </span>
             </div>
-            <div className="hidden md:flex items-center space-x-4 ">
-              <Link to="/login">
-                <Button variant="secondary" size="medium">Sign In</Button>
+            <nav className="hidden md:flex space-x-8">
+              <Link to="/" className="text-gray-700 hover:text-purple-600">Home</Link>
+              <Link to="/register" className="text-gray-700 hover:text-purple-600">Explore Artisan</Link>
+              <Link to="/register" className="text-gray-700 hover:text-purple-600">Become an Artisan</Link>
+              <Link to="/about" className="text-gray-700 hover:text-purple-600">About</Link>
+            </nav>
+            <div className="flex items-center space-x-4">
+              <Link 
+                to="/login" 
+                className="text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Login
               </Link>
-              <Link to="/register">
-                <Button variant="primary" size="medium">Get Started</Button>
+              <Link 
+                to="/register" 
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Get Started
               </Link>
             </div>
           </div>
