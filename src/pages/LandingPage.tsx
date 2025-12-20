@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   MagnifyingGlassIcon, 
@@ -10,43 +10,165 @@ import {
 } from '@heroicons/react/24/outline';
 
 const LandingPage: React.FC = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile menu when clicking outside or pressing escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (mobileMenuOpen && !target.closest('header')) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('click', handleClickOutside);
+      // Prevent body scroll when menu is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('click', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm sticky top-0 z-50 backdrop-blur-sm bg-white/95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-3 sm:py-4">
+            {/* Logo */}
             <div className="flex items-center">
-              <span className="text-2xl font-bold flex">
+              <Link to="/" className="flex items-center group">
                 <img 
-                src="/images/logo3.png" 
-                alt="CraftConnect Logo" 
-                className="w-8 h-8 mr-3 object-contain"
-              />
-                <span className="text-purple-600">Craft</span>
-                <span className="text-green-500">Connect</span>
-              </span>
+                  src="/images/logo3.png" 
+                  alt="CraftConnect Logo" 
+                  className="w-7 h-7 sm:w-8 sm:h-8 mr-2 sm:mr-3 object-contain group-hover:scale-110 transition-transform duration-200"
+                />
+                <span className="text-lg sm:text-xl lg:text-2xl font-bold flex">
+                  <span className="text-purple-600">Craft</span>
+                  <span className="text-green-500">Connect</span>
+                </span>
+              </Link>
             </div>
-            <nav className="hidden md:flex space-x-8">
-              <Link to="/" className="text-gray-700 hover:text-purple-600">Home</Link>
-              <Link to="/discover" className="text-gray-700 hover:text-purple-600">Explore Artisan</Link>
-              <Link to="/register" className="text-gray-700 hover:text-purple-600">Become an Artisan</Link>
-              <Link to="/about" className="text-gray-700 hover:text-purple-600">About</Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-4 lg:space-x-8">
+              <Link to="/" className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium">
+                Home
+              </Link>
+              <Link to="/discover" className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium">
+                Explore Artisan
+              </Link>
+              <Link to="/register" className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium">
+                Become an Artisan
+              </Link>
+              <Link to="/about" className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium">
+                About
+              </Link>
             </nav>
-            <div className="flex items-center space-x-4">
+
+            {/* Desktop Auth Buttons */}
+            <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
               <Link 
                 to="/login" 
-                className="text-purple-600 hover:text-purple-700 font-medium"
+                className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-purple-50"
               >
                 Login
               </Link>
               <Link 
                 to="/register" 
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg hover:bg-purple-700 transition-all duration-200 text-sm lg:text-base font-medium shadow-sm hover:shadow-md"
               >
                 Get Started
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-gray-700 hover:text-purple-600 focus:outline-none focus:text-purple-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Toggle mobile menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {mobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          <div className={`md:hidden transition-all duration-300 ease-in-out ${
+            mobileMenuOpen 
+              ? 'max-h-96 opacity-100 border-t border-gray-200' 
+              : 'max-h-0 opacity-0 overflow-hidden'
+          }`}>
+            <nav className="py-4 space-y-1">
+              <Link 
+                to="/" 
+                className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 transition-colors duration-200 px-3 py-3 rounded-lg font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link 
+                to="/discover" 
+                className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 transition-colors duration-200 px-3 py-3 rounded-lg font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Explore Artisan
+              </Link>
+              <Link 
+                to="/register" 
+                className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 transition-colors duration-200 px-3 py-3 rounded-lg font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Become an Artisan
+              </Link>
+              <Link 
+                to="/about" 
+                className="block text-gray-700 hover:text-purple-600 hover:bg-purple-50 transition-colors duration-200 px-3 py-3 rounded-lg font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                About
+              </Link>
+              
+              {/* Mobile Auth Buttons */}
+              <div className="pt-4 space-y-3 border-t border-gray-200 mt-4">
+                <Link 
+                  to="/login" 
+                  className="block text-purple-600 hover:text-purple-700 hover:bg-purple-50 font-medium transition-colors duration-200 px-3 py-3 rounded-lg text-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link 
+                  to="/register" 
+                  className="block bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200 px-4 py-3 rounded-lg text-center font-medium shadow-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </nav>
           </div>
         </div>
       </header>
@@ -66,7 +188,7 @@ const LandingPage: React.FC = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Link 
-                  to="/discover" 
+                  to="/register" 
                   className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium text-center"
                 >
                   Find Artisan
