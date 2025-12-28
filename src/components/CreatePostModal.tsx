@@ -94,6 +94,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
     setError('');
 
     try {
+      // Check verification requirement for job posting
+      if (postType === 'job' && !user?.isVerified) {
+        setError('Only verified customers can post jobs. Please complete your identity verification first.');
+        setLoading(false);
+        return;
+      }
+
       const baseData = {
         title: formData.title,
         description: formData.description,
@@ -124,7 +131,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
       onSuccess();
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create post');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create post';
+      setError(errorMessage);
+      
+      // If it's a verification error, show verification prompt
+      if (errorMessage.includes('verified') || errorMessage.includes('verification')) {
+        setTimeout(() => {
+          if (confirm('You need to be verified to post jobs. Would you like to go to your profile to complete verification?')) {
+            window.location.href = '/profile';
+          }
+        }, 100);
+      }
     } finally {
       setLoading(false);
     }
@@ -170,29 +187,57 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onSu
           
           {/* Post Type Toggle for Customers */}
           {user?.role === 'customer' && (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPostType('work')}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  postType === 'work'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Regular Post
-              </button>
-              <button
-                type="button"
-                onClick={() => setPostType('job')}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  postType === 'job'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Job Post
-              </button>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPostType('work')}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    postType === 'work'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Regular Post
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPostType('job')}
+                  disabled={!user?.isVerified}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    postType === 'job'
+                      ? 'bg-blue-600 text-white'
+                      : user?.isVerified
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  Job Post
+                </button>
+              </div>
+              
+              {/* Verification Warning for Job Posts */}
+              {postType === 'job' && !user?.isVerified && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Verification Required:</strong> Only verified customers can post jobs. 
+                      <button 
+                        type="button"
+                        onClick={() => window.location.href = '/profile'}
+                        className="ml-1 underline hover:no-underline font-medium"
+                      >
+                        Complete your verification
+                      </button> to unlock job posting.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

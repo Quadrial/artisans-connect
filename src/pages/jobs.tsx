@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBriefcase, FiClock, FiDollarSign, FiMapPin, FiCalendar, FiUser, FiX, FiCheck, FiAlertCircle, FiMessageCircle, FiMail, FiPhone } from 'react-icons/fi';
+import { FiBriefcase, FiClock, FiDollarSign, FiMapPin, FiCalendar, FiUser, FiX, FiCheck, FiAlertCircle, FiMessageCircle, FiMail, FiPhone, FiLock, FiUnlock } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
@@ -28,6 +28,7 @@ const JobsPage: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [closingJob, setClosingJob] = useState<string | null>(null);
   
   // Application form state
   const [coverLetter, setCoverLetter] = useState('');
@@ -90,6 +91,48 @@ const JobsPage: React.FC = () => {
     setSelectedJob(null);
   };
 
+  const handleCloseJob = async (jobId: string) => {
+    try {
+      setClosingJob(jobId);
+      await jobApplicationService.closeJob(jobId);
+      
+      // Update the job in the local state
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === jobId ? { ...job, status: 'closed' } : job
+        )
+      );
+      
+      alert('Job closed successfully!');
+    } catch (err) {
+      console.error('Failed to close job:', err);
+      alert(err instanceof Error ? err.message : 'Failed to close job');
+    } finally {
+      setClosingJob(null);
+    }
+  };
+
+  const handleReopenJob = async (jobId: string) => {
+    try {
+      setClosingJob(jobId);
+      await jobApplicationService.reopenJob(jobId);
+      
+      // Update the job in the local state
+      setJobs(prevJobs => 
+        prevJobs.map(job => 
+          job._id === jobId ? { ...job, status: 'active' } : job
+        )
+      );
+      
+      alert('Job reopened successfully!');
+    } catch (err) {
+      console.error('Failed to reopen job:', err);
+      alert(err instanceof Error ? err.message : 'Failed to reopen job');
+    } finally {
+      setClosingJob(null);
+    }
+  };
+
   const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -108,7 +151,20 @@ const JobsPage: React.FC = () => {
       alert('Application submitted successfully!');
     } catch (err) {
       console.error('Application submission error:', err);
-      setSubmitError(err instanceof Error ? err.message : 'Failed to submit application');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit application';
+      
+      // Check if it's a verification error
+      if (errorMessage.includes('verified') || errorMessage.includes('verification')) {
+        setSubmitError(errorMessage);
+        // Show verification prompt
+        setTimeout(() => {
+          if (confirm('You need to be verified to apply for jobs. Would you like to go to your profile to complete verification?')) {
+            navigate('/profile');
+          }
+        }, 100);
+      } else {
+        setSubmitError(errorMessage);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -251,15 +307,41 @@ const JobsPage: React.FC = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{job.title}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
+                        {/* Job Status Badge */}
+                        {job.status === 'closed' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <FiLock className="w-3 h-3 mr-1" />
+                            Closed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <FiUnlock className="w-3 h-3 mr-1" />
+                            Open
+                          </span>
+                        )}
+                      </div>
                       <p 
-                        className="text-sm text-gray-500 mb-2 cursor-pointer hover:text-blue-600"
+                        className="text-sm text-gray-500 mb-2 cursor-pointer hover:text-blue-600 flex items-center gap-2"
                         onClick={() => {
                           setSelectedProfile(job.user);
                           setShowProfileModal(true);
                         }}
                       >
-                        Posted by {job.user?.profile?.fullName || job.user?.username}
+                        <span>Posted by {job.user?.profile?.fullName || job.user?.username}</span>
+                        {/* User Verification Badge */}
+                        {job.user?.isVerified ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            <FiCheck className="w-2.5 h-2.5 mr-0.5" />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            <FiAlertCircle className="w-2.5 h-2.5 mr-0.5" />
+                            Unverified
+                          </span>
+                        )}
                       </p>
                       <p className="text-gray-600 text-sm mb-3">{job.description}</p>
                       
@@ -359,44 +441,105 @@ const JobsPage: React.FC = () => {
                   <span className="text-sm text-gray-500">
                     Posted {new Date(job.createdAt).toLocaleDateString()}
                   </span>
-                  {user?.role === 'artisan' ? (
-                    (() => {
-                      const application = getJobApplication(job._id);
-                      if (application) {
-                        return (
-                          <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                              application.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                              application.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                              application.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {application.status === 'accepted' ? '✓ Accepted' :
-                               application.status === 'rejected' ? '✗ Rejected' :
-                               application.status === 'pending' ? '⏳ Pending' :
-                               application.status}
+                  
+                  <div className="flex items-center gap-2">
+                    {user?.role === 'artisan' ? (
+                      (() => {
+                        const application = getJobApplication(job._id);
+                        
+                        // Show job closed message for artisans
+                        if (job.status === 'closed') {
+                          return (
+                            <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                              Job Closed
                             </span>
-                            <Button 
-                              variant="secondary" 
-                              size="small" 
-                              onClick={() => openMyApplicationModal(application)}
-                            >
-                              View Application
-                            </Button>
-                          </div>
+                          );
+                        }
+                        
+                        // Show verification requirement for unverified artisans
+                        if (!user?.isVerified) {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Verification Required
+                              </span>
+                              <Button 
+                                variant="primary" 
+                                size="small" 
+                                onClick={() => navigate('/profile')}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                Get Verified
+                              </Button>
+                            </div>
+                          );
+                        }
+                        
+                        if (application) {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                                application.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                                application.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                application.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {application.status === 'accepted' ? '✓ Accepted' :
+                                 application.status === 'rejected' ? '✗ Rejected' :
+                                 application.status === 'pending' ? '⏳ Pending' :
+                                 application.status}
+                              </span>
+                              <Button 
+                                variant="secondary" 
+                                size="small" 
+                                onClick={() => openMyApplicationModal(application)}
+                              >
+                                View Application
+                              </Button>
+                            </div>
+                          );
+                        }
+                        return (
+                          <Button variant="primary" size="small" onClick={() => openApplicationModal(job)}>
+                            Apply Now
+                          </Button>
                         );
-                      }
-                      return (
-                        <Button variant="primary" size="small" onClick={() => openApplicationModal(job)}>
-                          Apply Now
+                      })()
+                    ) : (
+                      // Customer actions
+                      <div className="flex items-center gap-2">
+                        <Button variant="secondary" size="small" onClick={() => openApplicationsModal(job)}>
+                          View Applications
                         </Button>
-                      );
-                    })()
-                  ) : (
-                    <Button variant="secondary" size="small" onClick={() => openApplicationsModal(job)}>
-                      View Applications
-                    </Button>
-                  )}
+                        
+                        {/* Close/Reopen Job Button - Only show if user owns the job */}
+                        {job.user?._id === user?.id && (
+                          <>
+                            {job.status === 'active' ? (
+                              <Button 
+                                variant="danger" 
+                                size="small" 
+                                onClick={() => handleCloseJob(job._id)}
+                                disabled={closingJob === job._id}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                {closingJob === job._id ? 'Closing...' : 'Close Job'}
+                              </Button>
+                            ) : (
+                              <Button 
+                                variant="primary" 
+                                size="small" 
+                                onClick={() => handleReopenJob(job._id)}
+                                disabled={closingJob === job._id}
+                              >
+                                {closingJob === job._id ? 'Reopening...' : 'Reopen Job'}
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

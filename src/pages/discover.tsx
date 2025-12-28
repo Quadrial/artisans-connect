@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiFilter, FiMapPin, FiDollarSign, FiUser, FiMessageCircle, FiX } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiMapPin, FiDollarSign, FiUser, FiMessageCircle, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
@@ -306,15 +306,29 @@ const DiscoverPage: React.FC = () => {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 
-                          className="font-bold text-gray-900 text-lg mb-1 cursor-pointer hover:text-blue-600 truncate"
-                          onClick={() => {
-                            setSelectedArtisan(artisan);
-                            setShowProfileModal(true);
-                          }}
-                        >
-                          {artisan.profile?.fullName || artisan.username}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 
+                            className="font-bold text-gray-900 text-lg cursor-pointer hover:text-blue-600 truncate"
+                            onClick={() => {
+                              setSelectedArtisan(artisan);
+                              setShowProfileModal(true);
+                            }}
+                          >
+                            {artisan.profile?.fullName || artisan.username}
+                          </h3>
+                          {/* Verification Badge */}
+                          {artisan.isVerified ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 shrink-0">
+                              <FiCheck className="w-3 h-3 mr-1" />
+                              Verified
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 shrink-0">
+                              <FiAlertCircle className="w-3 h-3 mr-1" />
+                              Unverified
+                            </span>
+                          )}
+                        </div>
                         {artisan.profile?.profession && (
                           <p className="text-sm text-gray-600 mb-2">{artisan.profile.profession}</p>
                         )}
@@ -426,9 +440,23 @@ const DiscoverPage: React.FC = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-xl font-bold text-gray-900">
-                      {selectedArtisan.profile?.fullName || selectedArtisan.username}
-                    </h2>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h2 className="text-xl font-bold text-gray-900">
+                        {selectedArtisan.profile?.fullName || selectedArtisan.username}
+                      </h2>
+                      {/* Verification Badge */}
+                      {selectedArtisan.isVerified ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                          <FiCheck className="w-4 h-4 mr-1" />
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+                          <FiAlertCircle className="w-4 h-4 mr-1" />
+                          Unverified
+                        </span>
+                      )}
+                    </div>
                     {selectedArtisan.profile?.profession && (
                       <p className="text-sm text-gray-600 mt-1">{selectedArtisan.profile.profession}</p>
                     )}

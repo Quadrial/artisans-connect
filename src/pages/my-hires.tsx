@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUsers, FiDollarSign, FiCalendar, FiMapPin, FiEdit, FiTrash2, FiEye, FiPlus, FiX, FiCheck, FiUser, FiMessageCircle } from 'react-icons/fi';
+import { FiUsers, FiDollarSign, FiCalendar, FiMapPin, FiEdit, FiTrash2, FiEye, FiPlus, FiX, FiCheck, FiUser, FiMessageCircle, FiAlertCircle } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
@@ -381,9 +381,23 @@ const MyHiresPage: React.FC = () => {
                               )}
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900">
-                                {app.artisan?.profile?.fullName || app.artisan?.username}
-                              </h4>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-gray-900">
+                                  {app.artisan?.profile?.fullName || app.artisan?.username}
+                                </h4>
+                                {/* Verification Badge */}
+                                {app.artisan?.isVerified ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                    <FiCheck className="w-2.5 h-2.5 mr-0.5" />
+                                    Verified
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                    <FiAlertCircle className="w-2.5 h-2.5 mr-0.5" />
+                                    Unverified
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm text-gray-500">{app.artisan?.email}</p>
                               {app.artisan?.profile?.city && (
                                 <p className="text-sm text-gray-500 flex items-center mt-1">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiMessageCircle, FiSend, FiUser, FiSearch, FiMoreVertical } from 'react-icons/fi';
+import { FiMessageCircle, FiSend, FiUser, FiSearch, FiMoreVertical, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
@@ -191,9 +191,23 @@ const MessagesPage: React.FC = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                            {otherUser?.profile?.fullName || otherUser?.username}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                              {otherUser?.profile?.fullName || otherUser?.username}
+                            </h3>
+                            {/* Verification Badge */}
+                            {otherUser?.isVerified ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                <FiCheck className="w-2.5 h-2.5 mr-0.5" />
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                <FiAlertCircle className="w-2.5 h-2.5 mr-0.5" />
+                                Unverified
+                              </span>
+                            )}
+                          </div>
                           {unread > 0 && (
                             <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5 ml-2 shrink-0">
                               {unread}
@@ -243,10 +257,24 @@ const MessagesPage: React.FC = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                      {getOtherUser(selectedConversation)?.profile?.fullName || 
-                       getOtherUser(selectedConversation)?.username}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                        {getOtherUser(selectedConversation)?.profile?.fullName || 
+                         getOtherUser(selectedConversation)?.username}
+                      </h2>
+                      {/* Verification Badge */}
+                      {getOtherUser(selectedConversation)?.isVerified ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          <FiCheck className="w-2.5 h-2.5 mr-0.5" />
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                          <FiAlertCircle className="w-2.5 h-2.5 mr-0.5" />
+                          Unverified
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">
                       {isConnected ? 'Online' : 'Offline'}
                     </p>

@@ -494,7 +494,7 @@ const LandingPage: React.FC = () => {
             {[
               {
                 question: "How do I know these artisans are real and verified?",
-                answer: "All artisans must verify with a school ID or educational and before being listed and reviewed for services."
+                answer: "All artisans must verify with an ID before being listed and reviewed for services."
               },
               {
                 question: "Can I trust the quality of the work without meeting the artisan first?",
@@ -573,9 +573,9 @@ const LandingPage: React.FC = () => {
               <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>Support@craftconnect.com</li>
-                <li>+234 800 1234 567</li>
-                <li>University of Lagos, Akoka,</li>
-                <li>Lagos State, Nigeria</li>
+                <li>+234 8145 522 446</li>
+                <li>Ahmadu Bello University Samaru, Zaria</li>
+                <li>Kaduna State, Nigeria</li>
               </ul>
             </div>
           </div>

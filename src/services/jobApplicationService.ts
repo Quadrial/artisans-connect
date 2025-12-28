@@ -128,6 +128,50 @@ class JobApplicationService {
       throw new Error('Network error. Please check your connection.');
     }
   }
+
+  async closeJob(jobId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/close`, {
+        method: 'PUT',
+        headers: this.getAuthHeader(),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to close job');
+      }
+
+      return result.job;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error. Please check your connection.');
+    }
+  }
+
+  async reopenJob(jobId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}/reopen`, {
+        method: 'PUT',
+        headers: this.getAuthHeader(),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to reopen job');
+      }
+
+      return result.job;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error. Please check your connection.');
+    }
+  }
 }
 
 export const jobApplicationService = new JobApplicationService();
