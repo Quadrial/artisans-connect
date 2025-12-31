@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiFilter, FiMapPin, FiDollarSign, FiUser, FiMessageCircle, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiMapPin, FiDollarSign, FiUser, FiMessageCircle, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
 import BottomNav from '../components/BottomNav';
@@ -47,9 +47,9 @@ const DiscoverPage: React.FC = () => {
   const [availableStates, setAvailableStates] = useState<string[]>([]);
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   
-  // Profile modal
-  const [selectedArtisan, setSelectedArtisan] = useState<Artisan | null>(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  // Profile modal - removed, now using dedicated user profile page
+  // const [selectedArtisan, setSelectedArtisan] = useState<Artisan | null>(null);
+  // const [showProfileModal, setShowProfileModal] = useState(false);
 
   const fetchArtisans = useCallback(async () => {
     try {
@@ -289,11 +289,8 @@ const DiscoverPage: React.FC = () => {
                   <div className="p-6">
                     <div className="flex items-start space-x-4 mb-4">
                       <div 
-                        className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0 cursor-pointer"
-                        onClick={() => {
-                          setSelectedArtisan(artisan);
-                          setShowProfileModal(true);
-                        }}
+                        className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
+                        onClick={() => navigate(`/user/${artisan._id}`)}
                       >
                         {artisan.profile?.profilePicture ? (
                           <img
@@ -309,10 +306,7 @@ const DiscoverPage: React.FC = () => {
                         <div className="flex items-center gap-2 mb-1">
                           <h3 
                             className="font-bold text-gray-900 text-lg cursor-pointer hover:text-blue-600 truncate"
-                            onClick={() => {
-                              setSelectedArtisan(artisan);
-                              setShowProfileModal(true);
-                            }}
+                            onClick={() => navigate(`/user/${artisan._id}`)}
                           >
                             {artisan.profile?.fullName || artisan.username}
                           </h3>
@@ -388,10 +382,7 @@ const DiscoverPage: React.FC = () => {
                         variant="primary"
                         size="small"
                         className="flex-1"
-                        onClick={() => {
-                          setSelectedArtisan(artisan);
-                          setShowProfileModal(true);
-                        }}
+                        onClick={() => navigate(`/user/${artisan._id}`)}
                       >
                         View Profile
                       </Button>
@@ -411,145 +402,6 @@ const DiscoverPage: React.FC = () => {
           </>
         )}
       </main>
-
-      {/* Profile Modal */}
-      {showProfileModal && selectedArtisan && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" style={{ zIndex: 9999 }}>
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowProfileModal(false)}></div>
-
-            <div className="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all my-8 max-w-2xl w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Artisan Profile</h3>
-                  <button onClick={() => setShowProfileModal(false)} className="text-gray-400 hover:text-gray-600">
-                    <FiX className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-20 h-20 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                    {selectedArtisan.profile?.profilePicture ? (
-                      <img
-                        src={selectedArtisan.profile.profilePicture}
-                        alt={selectedArtisan.username}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <FiUser className="w-10 h-10 text-gray-600" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h2 className="text-xl font-bold text-gray-900">
-                        {selectedArtisan.profile?.fullName || selectedArtisan.username}
-                      </h2>
-                      {/* Verification Badge */}
-                      {selectedArtisan.isVerified ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                          <FiCheck className="w-4 h-4 mr-1" />
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-                          <FiAlertCircle className="w-4 h-4 mr-1" />
-                          Unverified
-                        </span>
-                      )}
-                    </div>
-                    {selectedArtisan.profile?.profession && (
-                      <p className="text-sm text-gray-600 mt-1">{selectedArtisan.profile.profession}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {selectedArtisan.profile?.bio && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">About</label>
-                      <p className="text-gray-700">{selectedArtisan.profile.bio}</p>
-                    </div>
-                  )}
-
-                  {selectedArtisan.email && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <span className="text-sm">{selectedArtisan.email}</span>
-                    </div>
-                  )}
-
-                  {selectedArtisan.profile?.phone && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <span className="text-sm">{selectedArtisan.profile.phone}</span>
-                    </div>
-                  )}
-
-                  {(selectedArtisan.profile?.city || selectedArtisan.profile?.state) && (
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <FiMapPin className="w-4 h-4" />
-                      <span className="text-sm">
-                        {selectedArtisan.profile.city && selectedArtisan.profile.state
-                          ? `${selectedArtisan.profile.city}, ${selectedArtisan.profile.state}`
-                          : selectedArtisan.profile.city || selectedArtisan.profile.state}
-                      </span>
-                    </div>
-                  )}
-
-                  {selectedArtisan.profile?.skills && selectedArtisan.profile.skills.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedArtisan.profile.skills.map((skill, index) => (
-                          <span
-                            key={index}
-                            className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedArtisan.profile?.yearsOfExperience && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Experience</label>
-                      <p className="text-gray-700">{selectedArtisan.profile.yearsOfExperience} years</p>
-                    </div>
-                  )}
-
-                  {selectedArtisan.profile?.hourlyRate && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hourly Rate</label>
-                      <p className="text-green-600 font-semibold">₦{selectedArtisan.profile.hourlyRate}/hour</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    onClick={() => setShowProfileModal(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-                  >
-                    Close
-                  </button>
-                  {user?.role === 'customer' && user?.id !== selectedArtisan?._id && (
-                    <button
-                      onClick={() => {
-                        setShowProfileModal(false);
-                        handleMessageArtisan(selectedArtisan);
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-                    >
-                      <FiMessageCircle className="w-4 h-4" />
-                      <span>Send Message</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <BottomNav />
     </div>

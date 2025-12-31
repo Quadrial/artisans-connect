@@ -1,6 +1,7 @@
 // src/pages/dashboard.tsx
 import React, { useState, useEffect } from 'react';
-import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiMapPin, FiStar, FiBookmark, FiSearch, FiFilter, FiGrid, FiList, FiUsers, FiUser, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiHeart, FiMessageCircle, FiShare2, FiMoreHorizontal, FiMapPin, FiStar, FiBookmark, FiSearch, FiFilter, FiGrid, FiList, FiUsers, FiUser } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import DashboardHeader from '../components/DashboardHeader';
 import Sidebar from '../components/Sidebar';
@@ -132,16 +133,9 @@ const DashboardPage: React.FC = () => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">{artisan.name}</h3>
-                {/* Enhanced Verification Badge */}
-                {artisan.verified ? (
-                  <div className="flex items-center bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-sm">
-                    <FiCheck className="w-3 h-3 mr-1" />
-                    <span className="hidden sm:inline">Verified</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center bg-gradient-to-r from-gray-400 to-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-sm">
-                    <FiAlertCircle className="w-3 h-3 mr-1" />
-                    <span className="hidden sm:inline">Unverified</span>
+                {artisan.verified && (
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-white text-xs">✓</span>
                   </div>
                 )}
               </div>
@@ -247,9 +241,11 @@ const DashboardPage: React.FC = () => {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(post.likes.length);
     const [isSaved, setIsSaved] = useState(false);
+    const [isShared, setIsShared] = useState(false);
     const [comments, setComments] = useState<PostComment[]>(post.comments);
     const postId = post._id || post.id;
     const userId = (user as { _id?: string; id?: string })?._id || user?.id;
+    const navigate = useNavigate();
 
     useEffect(() => {
       // Check if current user has liked the post
@@ -260,7 +256,11 @@ const DashboardPage: React.FC = () => {
       if (userId && post.saves) {
         setIsSaved(post.saves.includes(userId));
       }
-    }, [post.likes, post.saves, userId]);
+      // Check if current user has shared the post
+      if (userId && post.shares) {
+        setIsShared(post.shares.includes(userId));
+      }
+    }, [post.likes, post.saves, post.shares, userId]);
 
     const handleLike = async () => {
       try {
@@ -292,12 +292,24 @@ const DashboardPage: React.FC = () => {
       }
     };
 
+    const handleShare = async () => {
+      try {
+        const result = await postService.toggleShare(postId);
+        setIsShared(result.shared);
+      } catch (error) {
+        console.error('Failed to share post', error);
+      }
+    };
+
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4 sm:mb-6">
         {/* Post Header */}
         <div className="p-3 sm:p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+            <button
+              onClick={() => navigate(`/user/${post.user._id}`)}
+              className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden shrink-0 hover:ring-2 hover:ring-blue-300 transition-all"
+            >
               {post.user.profile?.profilePicture ? (
                 <img
                   src={post.user.profile.profilePicture}
@@ -307,23 +319,19 @@ const DashboardPage: React.FC = () => {
               ) : (
                 <FiUser className="w-5 h-5 text-gray-600" />
               )}
-            </div>
+            </button>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <button
+                  onClick={() => navigate(`/user/${post.user._id}`)}
+                  className="font-semibold text-gray-900 text-sm sm:text-base truncate hover:text-blue-600 transition-colors text-left"
+                >
                   {post.user.profile?.fullName || post.user.username}
-                </h3>
-                {/* Enhanced Verification Badge */}
-                {post.user.verified ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 shrink-0">
-                    <FiCheck className="w-3 h-3 mr-1" />
-                    <span className="hidden sm:inline">Verified</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 shrink-0">
-                    <FiAlertCircle className="w-3 h-3 mr-1" />
-                    <span className="hidden sm:inline">Unverified</span>
-                  </span>
+                </button>
+                {post.user.verified && (
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
                 )}
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs sm:text-sm text-gray-500">
@@ -503,7 +511,12 @@ const DashboardPage: React.FC = () => {
                 <FiMessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-xs sm:text-sm font-medium">{comments.length}</span>
               </button>
-              <button className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-green-500 transition-colors">
+              <button 
+                onClick={handleShare}
+                className={`flex items-center space-x-1 sm:space-x-2 transition-colors ${
+                  isShared ? 'text-green-500' : 'text-gray-500 hover:text-green-500'
+                }`}
+              >
                 <FiShare2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-xs sm:text-sm font-medium hidden sm:inline">Share</span>
               </button>

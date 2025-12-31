@@ -152,6 +152,28 @@ class PostService {
     }
   }
 
+  async toggleShare(id: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/posts/${id}/share`, {
+        method: 'POST',
+        headers: this.getAuthHeader(),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to toggle share');
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Network error. Please check your connection.');
+    }
+  }
+
   async deletePost(id: string) {
     try {
       const response = await fetch(`${API_BASE_URL}/posts/${id}`, {

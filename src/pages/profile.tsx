@@ -65,8 +65,10 @@ interface Post {
     createdAt: string;
   }>;
   saves: string[];
+  shares?: string[];
   views: number;
   createdAt: string;
+  postType?: 'owned' | 'shared' | 'saved';
   user: {
     _id: string;
     username: string;
@@ -932,7 +934,18 @@ const ProfilePage: React.FC = () => {
                               <h4 className="font-semibold text-white text-lg">
                                 {profileData.fullName || user?.username}
                               </h4>
-                              <p className="text-sm text-gray-400">{formatTimeAgo(post.createdAt)}</p>
+                              <div className="flex items-center space-x-2">
+                                <p className="text-sm text-gray-400">{formatTimeAgo(post.createdAt)}</p>
+                                {post.postType && post.postType !== 'owned' && (
+                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                    post.postType === 'shared' 
+                                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                      : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                  }`}>
+                                    {post.postType === 'shared' ? 'Shared' : 'Saved'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                           

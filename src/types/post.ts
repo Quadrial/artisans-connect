@@ -45,9 +45,11 @@ export interface Post {
   likes: string[];
   comments: PostComment[];
   saves?: string[];
+  shares?: string[];
   views?: number;
   status?: string;
   type?: 'work' | 'job';
+  postType?: 'owned' | 'shared' | 'saved';
   priceRange?: {
     min: number;
     max: number;

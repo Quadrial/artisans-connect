@@ -10,6 +10,7 @@ import RegisterPage from './pages/register';
 // Protected Pages
 import DashboardPage from './pages/dashboard';
 import ProfilePage from './pages/profile';
+import UserProfilePage from './pages/UserProfilePage';
 import DiscoverPage from './pages/discover';
 import JobsPage from './pages/jobs';
 import MyHiresPage from './pages/my-hires';
@@ -41,12 +42,15 @@ function App() {
         <Route index element={<ProfilePage />} />
       </Route>
 
+      {/* Protected Routes - User Profile */}
+      <Route path="/user/:userId" element={<ProtectedRoute />}>
+        <Route index element={<UserProfilePage />} />
+      </Route>
+
       {/* Protected Routes - Discover */}
       <Route path="/discover" element={<ProtectedRoute />}>
         <Route index element={<DiscoverPage />} />
       </Route>
-
-      {/* Protected Routes - Jobs */}
       <Route path="/jobs" element={<ProtectedRoute />}>
         <Route index element={<JobsPage />} />
       </Route>
